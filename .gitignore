@@ -1,0 +1,9 @@
+*
+!.gitignore
+!*.sln
+!/netdisk4tc/
+!*.c
+!*.h
+!*.vcproj
+!*.rc
+!*.def
