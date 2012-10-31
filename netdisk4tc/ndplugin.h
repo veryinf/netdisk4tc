@@ -27,9 +27,9 @@ typedef void (__stdcall *tLogProcW)(int, int, WCHAR*);
 typedef BOOL (__stdcall *tRequestProcW)(int, int, WCHAR*, WCHAR*, WCHAR*, int);
 
 typedef struct _RemoteInfoStruct{
-	DWORD SizeLow,SizeHigh;
-	FILETIME LastWriteTime;
-	int Attr;
+    DWORD SizeLow,SizeHigh;
+    FILETIME LastWriteTime;
+    int Attr;
 } RemoteInfoStruct;
 
 extern HANDLE hInst;
@@ -37,8 +37,5 @@ extern int PluginNumber;
 extern tProgressProcW ProgressProcW;
 extern tLogProcW LogProcW;
 extern tRequestProcW RequestProcW;
-
-WCHAR* wcslcpy(WCHAR*, const WCHAR*, int);
-CHAR* strlcpy(CHAR*, const CHAR*, int);
 
 #endif

@@ -1,119 +1,149 @@
 #include "dictionary.h"
 
 
-DICTIONARY * InitializeDictionary(void)
-{
-	DICTIONARY *dict = malloc(sizeof(DICTIONARY));
-	memset(dict, 0, sizeof(DICTIONARY));
-	dict->first = NULL;
-	dict->last = NULL;
-	dict->length = 0;
-	return dict;
+DICTIONARY * InitializeDict(void) {
+    DICTIONARY *dict = (DICTIONARY *)malloc(sizeof(DICTIONARY));
+    memset(dict, 0, sizeof(DICTIONARY));
+    dict->first = NULL;
+    dict->length = 0;
+    return dict;
 }
 
-void * DictionarySetElement(DICTIONARY *pdict, wchar_t *key, const void *value, size_t size)
-{
-	void *ret = NULL;
-	DICTPAIR *tmp, *nnode, *node = NULL;
-	tmp = pdict->first;
-	while(tmp != NULL) {
-		if(wcscmp(key, tmp->key) == 0) {
-			node = tmp;
-			break;
-		}
-		tmp = tmp->next;
-	}
-	if(node != NULL) {
-		ret = node->value;
-		node->value = value;
-	} else {
-		nnode = malloc(sizeof(DICTPAIR));
-		memset(nnode, 0, sizeof(DICTPAIR));
-		nnode->key = key;
-		nnode->value = malloc(size);
-		memset(nnode->value, 0, size);
-		memcpy(nnode->value, value, 1, size);
-		nnode->next = NULL;
-		nnode->previous = pdict->last;
-		if(pdict->first == NULL) {
-			pdict->first = nnode;
-		} else {
-			pdict->last->next = nnode;
-		}
-		pdict->last = nnode;
-		pdict->length++;
-	}
-	return ret;
+int DictSetElement(DICTIONARY *pdict, wchar_t *key, const void *value, size_t size) {
+    void *ret = NULL;
+    DICTPAIR *iter, *node = NULL;
+    iter = pdict->first;
+    while(iter != NULL) {
+        if(wcscmp(key, iter->key) == 0) {
+            node = iter;
+        }
+        if(iter->next == NULL) {
+            break;
+        }
+        iter = iter->next;
+    }
+    if(node != NULL) {
+        free(iter->value);
+        iter->value = malloc(size);
+        if(!iter->value) {
+            return DICT_FAILED;
+        }
+        memcpy(iter->value, value, size);
+        iter->size = size;
+        return DICT_OK;
+    } else {
+        node = (DICTPAIR*)malloc(sizeof(DICTPAIR));
+        memset(node, 0, sizeof(DICTPAIR));
+        node->key = (wchar_t*)malloc(WCS_SIZEOF(key));
+        if(!node->key) {
+            return DICT_FAILED;
+        }
+        memset(node->key, 0, WCS_SIZEOF(key));
+        wcscpy(node->key, key);
+        node->value = malloc(size);
+        if(!node->value) {
+            return DICT_FAILED;
+        }
+        memset(node->value, 0, size);
+        memcpy(node->value, value, size);
+        node->size = size;
+        node->next = NULL;
+        if(iter) {
+            iter->next = node;
+        } else {
+            pdict->first = node;
+        }
+        pdict->length++;
+        return DICT_OK;
+    }
 }
 
-const void * DictionaryGetElement(DICTIONARY *pdict, WCHAR *key)
-{
-	void *ret = NULL;
-	DICTPAIR *tmp = pdict->first;
-	while(tmp != NULL) {
-		if(wcscmp(key, tmp->key) == 0) {
-			ret = tmp->value;
-			break;
-		}
-		tmp = tmp->next;
-	}
-	return ret;
+int DictGetElementS(DICTIONARY *pdict, wchar_t *key, void **value, size_t size) {
+    DICTPAIR *iter = pdict->first;
+    while(iter != NULL) {
+        if(wcscmp(key, iter->key) == 0) {
+            *value = malloc(size);
+            if (!*value) {
+                return DICT_FAILED;
+            }
+            memcpy(*value, iter->value, size);
+            return DICT_OK;
+        }
+        iter = iter->next;
+    }
+    return DICT_MISS;
 }
 
-void * DictionaryRemoveElement(DICTIONARY *pdict, WCHAR *key)
-{
-	void *ret = NULL;
-	DICTPAIR *tmp = pdict->first;
-	while(tmp != NULL) {
-		if(wcscmp(key, tmp->key) == 0) {
-			ret = tmp->value;
-			break;
-		}
-		tmp = tmp->next;
-	}
-	if(ret != NULL) {
-		if(pdict->first == tmp) {
-			tmp->next->previous = NULL;
-			pdict->first = tmp->next;
-		} else {
-			tmp->previous->next = tmp->next;
-			if(pdict->last == tmp) {
-				pdict->last = tmp->previous;
-			}
-		}
-		pdict->length--;
-		free(tmp);
-	}
-	return ret;
+void * DictGetElement(DICTIONARY *pdict, wchar_t *key) {
+    void *ret = NULL;
+    DICTPAIR *iter = pdict->first;
+    while(iter != NULL) {
+        if(wcscmp(key, iter->key) == 0) {
+            ret = malloc(iter->size);
+            if(!ret) {
+                return NULL;
+            }
+            memcpy(ret, iter->value, iter->size);
+            return ret;
+        }
+        iter = iter->next;
+    }
+    return NULL;
 }
 
-void DictionaryTraverse(const DICTIONARY *pdict, DictionaryEnumerator enumerator)
-{
-	DICTPAIR *node = pdict->first;
-	while(node != NULL) {
-		if(!enumerator(node->key, node->value)) {
-			break;
-		}
-		node = node->next;
-	}
+int DictRemoveElement(DICTIONARY *pdict, wchar_t *key) {
+    DICTPAIR *iter = pdict->first, *hit = NULL;
+    while(iter != NULL) {
+        if(pdict->first == iter && wcscmp(key, iter->key) == 0) {
+            pdict->first = iter->next;
+            hit = iter;
+            break;
+        }
+        if(iter->next != NULL && wcscmp(key, iter->next->key) == 0) {
+            hit = iter->next;
+            iter->next = iter->next->next;
+            break;
+        }
+        iter = iter->next;
+    }
+    if(hit) {
+        free(hit->key);
+        free(hit->value);
+        free(hit);
+        pdict->length--;
+        return DICT_OK;
+    }
+    return DICT_MISS;
 }
 
-void FreeDictionary(DICTIONARY *pdict)
-{
-	DICTPAIR *node = pdict->first;
-	while(node != NULL) {
-		node = node->next;
-		if(node != NULL) {
-			free(node->previous->value);
-			node->previous->value = NULL;
-			free(node->previous);
-		}
-	}
-	if(pdict->last != NULL) {
-		free(pdict->last->value);
-		pdict->last->value = NULL;
-		free(pdict->last);
-	}
-	free(pdict);
-	pdict = NULL;
+void DicTraverse(const DICTIONARY *pdict, DictEnumerator enumerator) {
+    DICTPAIR *node = pdict->first;
+    while(node != NULL) {
+        if(!enumerator(node->key, node->value, node->size)) {
+            break;
+        }
+        node = node->next;
+    }
+}
+
+void FreeDict(DICTIONARY *pdict) {
+    DICTPAIR *iter = pdict->first, *tmp;
+    while(iter != NULL) {
+        tmp = iter;
+        iter = iter->next;
+        free(tmp->key);
+        free(tmp->value);
+    }
+    free(pdict);
+}
+
+size_t DictGetElementSize(DICTIONARY *pdict, wchar_t *key) {
+    DICTPAIR *iter = pdict->first;
+    while(iter != NULL) {
+        if(wcscmp(key, iter->key) == 0) {
+            return iter->size;
+        }
+        iter = iter->next;
+    }
+    return 0;
 }

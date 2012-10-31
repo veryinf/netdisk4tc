@@ -1,13 +1,13 @@
 EXPORTS
-	FsInit
-	FsInitW
-	FsFindFirst
-	FsFindFirstW
-	FsFindNext
-	FsFindNextW
-	FsFindClose
-	FsGetDefRootName
-	FsGetFile
-	FsGetFileW
-	FsExecuteFile
-	FsExecuteFileW
+    FsInit
+    FsInitW
+    FsFindFirst
+    FsFindFirstW
+    FsFindNext
+    FsFindNextW
+    FsFindClose
+    FsGetDefRootName
+    FsGetFile
+    FsGetFileW
+    FsExecuteFile
+    FsExecuteFileW

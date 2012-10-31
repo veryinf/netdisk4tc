@@ -3,16 +3,17 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include "utility.h"
 
 #define DICT_OK 0
 #define DICT_FAILED 1
 #define DICT_MISS 2
 
 typedef struct _pair {
-	wchar_t *key;
-	void *value;
-	size_t *size;
-	struct _pair *next;
+    wchar_t *key;
+    size_t size;
+    void *value;
+    struct _pair *next;
 } DICTPAIR;
 
 //************************************
@@ -21,14 +22,13 @@ typedef struct _pair {
 // Access:    public 
 // Returns:   INT，如果返回 0 将中止迭代，其他值忽略
 // Parameter: (WCHAR *, void *)
-// Description: 供字典遍历时的迭代回调函数，2个参数指明键名及键值
+// Description: 供字典遍历时的迭代回调函数，3个参数指明键名,键值及值的大小
 //************************************
-typedef int (*DictEnumerator)(wchar_t *, void *);
+typedef int (*DictEnumerator)(const wchar_t *, const void *, size_t size);
 
-typedef struct _dictionary{
-	DICTPAIR *first;
-	DICTPAIR *last;
-	unsigned int length;
+typedef struct _dictionary {
+    DICTPAIR *first;
+    size_t length;
 } DICTIONARY;
 
 //************************************
@@ -46,7 +46,7 @@ DICTIONARY * InitializeDict(void);
 // Method:    DictionaryRemoveElement
 // FullName:  DictionaryRemoveElement
 // Access:    public 
-// Returns:   int，成功删除返回 DICT_OK，给定的键名未找到则返回 DICT_MISS，否则返回 DICT_FAILED
+// Returns:   int，成功删除返回 DICT_OK，给定的键名未找到则返回 DICT_MISS
 // Qualifier:
 // Parameter: DICTIONARY *
 // Parameter: WCHAR *
@@ -58,7 +58,7 @@ int DictRemoveElement(DICTIONARY *, wchar_t *);
 // Method:    DictGetElementSize
 // FullName:  DictGetElementSize
 // Access:    public 
-// Returns:   size_t
+// Returns:   size_t 返回指定键名条目的大小，未命中返回 0
 // Qualifier:
 // Parameter: DICTIONARY *
 // Parameter: wchar_t *
@@ -96,7 +96,7 @@ void * DictGetElement(DICTIONARY *, wchar_t *);
 // Method:    DictionarySetElement
 // FullName:  DictionarySetElement
 // Access:    public 
-// Returns:   int 成功返回 DICT_OK，给定的键名未找到则返回 DICT_MISS，否则返回 DICT_FAILED
+// Returns:   int 成功返回 DICT_OK，否则返回 DICT_FAILED
 // Qualifier:
 // Parameter: DICTIONARY *
 // Parameter: WCHAR *
