@@ -2,7 +2,7 @@
 #include "resource.h"
 #include "ui.h"
 
-HANDLE hinst;
+HANDLE hInst;
 int PluginNumber;
 tProgressProcW ProgressProcW = NULL;
 tLogProcW LogProcW = NULL;
@@ -31,8 +31,9 @@ CHAR* strlcpy(CHAR *str1, const CHAR *str2, int imaxlen)
 }
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved) {
-	if (ul_reason_for_call == DLL_PROCESS_ATTACH)
-		hinst = hModule;
+	if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
+		hInst = hModule;
+	}
 	return TRUE;
 }
 
@@ -41,10 +42,10 @@ void __stdcall FsGetDefRootName(CHAR* DefRootName,int maxlen) {
 }
 
 int __stdcall FsInitW(int PluginNr, tProgressProcW pProgressProcW, tLogProcW pLogProcW, tRequestProcW pRequestProcW) {
-	ProgressProcW=pProgressProcW;
-    LogProcW=pLogProcW;
-    RequestProcW=pRequestProcW;
-	PluginNumber=PluginNr;
+	ProgressProcW = pProgressProcW;
+    LogProcW = pLogProcW;
+    RequestProcW = pRequestProcW;
+	PluginNumber = PluginNr;
 	return 0;
 }
 
@@ -85,7 +86,7 @@ int __stdcall FsGetFileW(WCHAR* RemoteName, WCHAR* LocalName, int CopyFlags, Rem
 
 int __stdcall FsExecuteFileW(HWND MainWin, WCHAR* RemoteName, WCHAR* Verb) {
 	if(wcscmp(RemoteName, L"\\[功能]新增网盘") == 0) {
-		DialogBox(hinst, MAKEINTRESOURCE(IDD_NEW), GetActiveWindow(), NewDiskDlgProc);
+		DialogBox(hInst, MAKEINTRESOURCE(IDD_NEW), GetActiveWindow(), NewDiskDlgProc);
 		return FS_EXEC_OK;
 	}
 	return FS_EXEC_ERROR;

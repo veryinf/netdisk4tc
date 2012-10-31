@@ -11,7 +11,7 @@ DICTIONARY * InitializeDictionary(void)
 	return dict;
 }
 
-void * DictionarySetElement(DICTIONARY *pdict, WCHAR *key, void *value)
+void * DictionarySetElement(DICTIONARY *pdict, wchar_t *key, const void *value, size_t size)
 {
 	void *ret = NULL;
 	DICTPAIR *tmp, *nnode, *node = NULL;
@@ -30,7 +30,9 @@ void * DictionarySetElement(DICTIONARY *pdict, WCHAR *key, void *value)
 		nnode = malloc(sizeof(DICTPAIR));
 		memset(nnode, 0, sizeof(DICTPAIR));
 		nnode->key = key;
-		nnode->value = value;
+		nnode->value = malloc(size);
+		memset(nnode->value, 0, size);
+		memcpy(nnode->value, value, 1, size);
 		nnode->next = NULL;
 		nnode->previous = pdict->last;
 		if(pdict->first == NULL) {
@@ -44,7 +46,7 @@ void * DictionarySetElement(DICTIONARY *pdict, WCHAR *key, void *value)
 	return ret;
 }
 
-void * DictionaryGetElement(DICTIONARY *pdict, WCHAR *key)
+const void * DictionaryGetElement(DICTIONARY *pdict, WCHAR *key)
 {
 	void *ret = NULL;
 	DICTPAIR *tmp = pdict->first;
@@ -96,22 +98,20 @@ void DictionaryTraverse(const DICTIONARY *pdict, DictionaryEnumerator enumerator
 	}
 }
 
-void FreeDictionary(DICTIONARY *pdict, BOOL autofree)
+void FreeDictionary(DICTIONARY *pdict)
 {
 	DICTPAIR *node = pdict->first;
 	while(node != NULL) {
 		node = node->next;
 		if(node != NULL) {
-			if(autofree) {
-				free(node->previous->value);
-			}
+			free(node->previous->value);
+			node->previous->value = NULL;
 			free(node->previous);
 		}
 	}
 	if(pdict->last != NULL) {
-		if(autofree) {
-			free(pdict->last->value);
-		}
+		free(pdict->last->value);
+		pdict->last->value = NULL;
 		free(pdict->last);
 	}
 	free(pdict);
