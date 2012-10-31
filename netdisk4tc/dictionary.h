@@ -1,12 +1,17 @@
 #ifndef DICTIONARY_H_
 #define DICTIONARY_H_
 #include <stdlib.h>
-#include <Windows.h>
+#include <stddef.h>
+#include <string.h>
+
+#define DICT_OK 0
+#define DICT_FAILED 1
+#define DICT_MISS 2
 
 typedef struct _pair {
-	WCHAR *key;
+	wchar_t *key;
 	void *value;
-	struct _pair *previous;
+	size_t *size;
 	struct _pair *next;
 } DICTPAIR;
 
@@ -18,7 +23,7 @@ typedef struct _pair {
 // Parameter: (WCHAR *, void *)
 // Description: 供字典遍历时的迭代回调函数，2个参数指明键名及键值
 //************************************
-typedef INT (*DictionaryEnumerator)(WCHAR *, void *);
+typedef int (*DictEnumerator)(wchar_t *, void *);
 
 typedef struct _dictionary{
 	DICTPAIR *first;
@@ -35,43 +40,71 @@ typedef struct _dictionary{
 // Parameter: void
 // Description: 创建新的字典
 //************************************
-DICTIONARY * InitializeDictionary(void);
+DICTIONARY * InitializeDict(void);
 
 //************************************
 // Method:    DictionaryRemoveElement
 // FullName:  DictionaryRemoveElement
 // Access:    public 
-// Returns:   void *，如果给定的键名未找到则返回NULL，否则从字典中删除给定键名的条目，并返回指向此条目的指针
+// Returns:   int，成功删除返回 DICT_OK，给定的键名未找到则返回 DICT_MISS，否则返回 DICT_FAILED
 // Qualifier:
 // Parameter: DICTIONARY *
 // Parameter: WCHAR *
 // Description: 按照键名移除指定字典的特定条目
 //************************************
-void * DictionaryRemoveElement(DICTIONARY *, WCHAR *);
+int DictRemoveElement(DICTIONARY *, wchar_t *);
+
+//************************************
+// Method:    DictGetElementSize
+// FullName:  DictGetElementSize
+// Access:    public 
+// Returns:   size_t
+// Qualifier:
+// Parameter: DICTIONARY *
+// Parameter: wchar_t *
+// Description: 按照键名获取指定条目大小
+//************************************
+size_t DictGetElementSize(DICTIONARY *, wchar_t *);
 
 //************************************
 // Method:    DictionaryGetElement
 // FullName:  DictionaryGetElement
 // Access:    public 
+// Returns:   int 成功返回 DICT_OK，给定的键名未找到则返回 DICT_MISS，否则返回 DICT_FAILED
+// Qualifier:
+// Parameter: DICTIONARY *
+// Parameter: wchar_t *
+// Parameter: void * * 
+// Parameter: size_t
+// Description: 按照键名返回指定字典的特定条目
+//************************************
+int DictGetElementS(DICTIONARY *, wchar_t *, void **, size_t);
+
+//************************************
+// Method:    DictGetElement
+// FullName:  DictGetElement
+// Access:    public 
 // Returns:   void *
 // Qualifier:
 // Parameter: DICTIONARY *
-// Parameter: WCHAR *
-// Description: 按照键名返回指定字典的特定条目
+// Parameter: wchar_t *
+// Description: 按照键名返回指定字典的特定条目，使用后应释放内存。如果不存在，返回 NULL
 //************************************
-void * DictionaryGetElement(DICTIONARY *, WCHAR *);
+void * DictGetElement(DICTIONARY *, wchar_t *);
 
 //************************************
 // Method:    DictionarySetElement
 // FullName:  DictionarySetElement
 // Access:    public 
-// Returns:   void *，如果给定的键名未找到则返回NULL，否则从字典中更新给定键名的条目，并返回指向此条目原始的值
+// Returns:   int 成功返回 DICT_OK，给定的键名未找到则返回 DICT_MISS，否则返回 DICT_FAILED
 // Qualifier:
 // Parameter: DICTIONARY *
 // Parameter: WCHAR *
+// Parameter: const void *
+// Parameter: size_t
 // Description: 按照键名更新指定字典的特定条目
 //************************************
-void * DictionarySetElement(DICTIONARY *, WCHAR *, void *);
+int DictSetElement(DICTIONARY *, wchar_t *, const void *, size_t);
 
 //************************************
 // Method:    DictionaryTraverse
@@ -83,7 +116,7 @@ void * DictionarySetElement(DICTIONARY *, WCHAR *, void *);
 // Parameter: DictionaryEnumerator
 // Description: 遍历指定的字典，回调函数的返回值指明是否需要中止遍历
 //************************************
-void DictionaryTraverse(const DICTIONARY *, DictionaryEnumerator);
+void DictTraverse(const DICTIONARY *, DictEnumerator);
 
 //************************************
 // Method:    FreeDictionary
@@ -95,6 +128,6 @@ void DictionaryTraverse(const DICTIONARY *, DictionaryEnumerator);
 // Parameter: BOOL 是否要同时销毁指向条目的指针（这些数据不是由字典所创建），除非你特别明白，否则不要选择将此参数设置为TRUE
 // Description: 销毁指定的字典
 //************************************
-void FreeDictionary(DICTIONARY *, int);
+void FreeDict(DICTIONARY *);
 
 #endif

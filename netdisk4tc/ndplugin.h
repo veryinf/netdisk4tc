@@ -11,17 +11,34 @@
 #define FS_EXEC_YOURSELF -1
 #define FS_EXEC_SYMLINK -2
 
-typedef int (__stdcall *tProgressProc)(int PluginNr,char* SourceName, char* TargetName,int PercentDone);
-typedef void (__stdcall *tLogProc)(int PluginNr,int MsgType,char* LogString);
-typedef BOOL (__stdcall *tRequestProc)(int PluginNr,int RequestType,char* CustomTitle,char* CustomText,char* ReturnedText,int maxlen);
-typedef int (__stdcall *tProgressProcW)(int PluginNr,WCHAR* SourceName, WCHAR* TargetName,int PercentDone);
-typedef void (__stdcall *tLogProcW)(int PluginNr,int MsgType,WCHAR* LogString);
-typedef BOOL (__stdcall *tRequestProcW)(int PluginNr,int RequestType,WCHAR* CustomTitle, WCHAR* CustomText,WCHAR* ReturnedText,int maxlen);
+#define MSGTYPE_CONNECT 1
+#define MSGTYPE_DISCONNECT 2
+#define MSGTYPE_DETAILS 3
+#define MSGTYPE_TRANSFERCOMPLETE 4
+#define MSGTYPE_CONNECTCOMPLETE 5
+#define MSGTYPE_IMPORTANTERROR 6
+#define MSGTYPE_OPERATIONCOMPLETE 7
+
+typedef int (__stdcall *tProgressProc)(int, char*, char*,int);
+typedef void (__stdcall *tLogProc)(int, int, char*);
+typedef BOOL (__stdcall *tRequestProc)(int, int, char*, char*, char*, int);
+typedef int (__stdcall *tProgressProcW)(int, WCHAR*, WCHAR*, int);
+typedef void (__stdcall *tLogProcW)(int, int, WCHAR*);
+typedef BOOL (__stdcall *tRequestProcW)(int, int, WCHAR*, WCHAR*, WCHAR*, int);
 
 typedef struct _RemoteInfoStruct{
 	DWORD SizeLow,SizeHigh;
 	FILETIME LastWriteTime;
 	int Attr;
 } RemoteInfoStruct;
+
+extern HANDLE hInst;
+extern int PluginNumber;
+extern tProgressProcW ProgressProcW;
+extern tLogProcW LogProcW;
+extern tRequestProcW RequestProcW;
+
+WCHAR* wcslcpy(WCHAR*, const WCHAR*, int);
+CHAR* strlcpy(CHAR*, const CHAR*, int);
 
 #endif

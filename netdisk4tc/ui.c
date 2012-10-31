@@ -2,13 +2,16 @@
 #include "resource.h"
 #include "disk.h"
 #include "dictionary.h"
+#include "ndplugin.h"
 
 #define INPUT_MAX 1024
 
 int __stdcall NewDiskDlgProc(HWND hWnd, unsigned int Message, WPARAM wParam, LPARAM lParam) {
 	WCHAR buff[INPUT_MAX];
 	DICTIONARY *dict;
+	WCHAR *tmp;
 	WCHAR *kuaipan;
+	int ss;
 	switch (Message) {
 		case WM_INITDIALOG:
 			SendDlgItemMessageW(hWnd, IDC_COMBOBOX_TYPE, CB_ADDSTRING, 0, (LPARAM)L"½ðÉ½¿ìÅÌ");
@@ -27,13 +30,15 @@ int __stdcall NewDiskDlgProc(HWND hWnd, unsigned int Message, WPARAM wParam, LPA
 					}
 					break;
 				case IDOK:
-					dict = InitializeDictionary();
-					DictionarySetElement(dict, L"kuaipan", (void *)L"http://www.kuaipan.cn/account_register.htm");
-					DictionarySetElement(dict, L"vdisk", (void *)L"http://weibo.com/signup/signup.php");
-					kuaipan = (WCHAR *)DictionaryGetElement(dict, L"kuaipan");
-					DictionaryRemoveElement(dict, L"vdisk");
-					FreeDictionary(dict, FALSE);
-					dict = NULL;
+					//dict = InitializeDictionary();
+					//tmp = L"http://www.kuaipan.cn/account_register.htm";
+					//DictionarySetElement(dict, L"kuaipan", (void *)tmp, (wcslen(tmp) + 1) * sizeof(WCHAR));
+					//tmp = L"http://weibo.com/signup/signup.php";
+					//DictionarySetElement(dict, L"vdisk", (void *)tmp, (wcslen(tmp) + 1) * sizeof(WCHAR));
+					//kuaipan = (WCHAR *)DictionaryGetElement(dict, L"vdisk");
+					//DictionaryRemoveElement(dict, L"vdisk");
+					//FreeDictionary(dict);
+					//dict = NULL;
 					break;
 				case IDCANCEL:
 					EndDialog(hWnd, IDCANCEL);
