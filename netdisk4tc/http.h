@@ -2,31 +2,63 @@
 #define HTTP_H__
 #include <limits.h>
 #include <winsock.h>
+#include "dictionary.h"
 
-typedef struct http_connection {
+#ifndef TRUE
+#define TRUE                        1
+#endif
+#ifndef FALSE
+#define FALSE                       0
+#endif
+
+#define HTTP_NEWLINE                "\r\n"
+
+#define HT_OK                       0
+#define HT_FATAL_ERROR              0xFFFF
+#define HT_INVALID_ARGUMENT         0xFFFE
+#define HT_SERVICE_UNAVAILABLE      0xFFFD
+#define HT_RESOURCE_UNAVAILABLE     0xFFFC
+#define HT_MEMORY_ERROR             0xFFFB
+#define HT_NETWORK_ERROR            0xFFFA
+#define HT_ILLEGAL_OPERATION        0xFFF9
+#define HT_HOST_UNAVAILABLE         0xFFF8        
+#define HT_IO_ERROR                 0xFFF7
+
+#define HTTP_METHOD_GET             0
+#define HTTP_METHOD_POST            1
+
+typedef struct _http_connection {
     SOCKET socketd;
-    int status;
     char *host;
+    unsigned short port;
     struct sockaddr_in address;
-    int persistent;
-    HTTP_AUTH_INFO *auth_info;
+    int keep_alive;
+    int status;
 } HTTP_CONNECTION;
 
-typedef struct http_request {
+typedef struct _http_request {
     int method;
-    char *resource;
-    HTTP_HEADER_FIELD *first_header_field;
-    HTTP_HEADER_FIELD *last_header_field;
-    HTTP_STORAGE *content;
+    char *path;
+    char *version;
+    DICTIONARY *headers;
+    char *body;
 } HTTP_REQUEST;
 
-typedef struct http_response {
+typedef struct _http_response {
+    char *version;
     int status_code;
     char *status_msg;
-    char *version;
-    HTTP_HEADER_FIELD *first_header_field;
-    HTTP_HEADER_FIELD *last_header_field;
-    HTTP_STORAGE *content;
+    DICTIONARY *headers;
+    char *body;
 } HTTP_RESPONSE;
 
+int http_connect(HTTP_CONNECTION **, const char *, unsigned short);
+int http_request(HTTP_CONNECTION *, const HTTP_REQUEST *, HTTP_RESPONSE **);
+int http_disconnect(HTTP_CONNECTION **);
+
+HTTP_REQUEST * http_request_create(const char *, int, const char *);
+char * http_request_tostr(const HTTP_REQUEST *);
+void http_request_destory(HTTP_REQUEST **);
+HTTP_RESPONSE * http_response_fromstr(const char *);
+void http_response_destory(HTTP_RESPONSE **);
 #endif

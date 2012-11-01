@@ -1,17 +1,16 @@
 #include "ui.h"
 #include "resource.h"
 #include "disk.h"
-#include "dictionary.h"
+#include "http.h"
 #include "ndplugin.h"
 
 #define INPUT_MAX 1024
 
 INT_PTR CALLBACK NewDiskDlgProc(HWND hWnd, unsigned int Message, WPARAM wParam, LPARAM lParam) {
     WCHAR buff[INPUT_MAX];
-    DICTIONARY *dict;
-    WCHAR *tmp;
-    WCHAR *kuaipan;
-    int ss;
+	HTTP_CONNECTION *conn;
+    HTTP_REQUEST *request;
+    HTTP_RESPONSE *response;
     switch (Message) {
         case WM_INITDIALOG:
             SendDlgItemMessageW(hWnd, IDC_COMBOBOX_TYPE, CB_ADDSTRING, 0, (LPARAM)L"½ðÉ½¿ìÅÌ");
@@ -30,15 +29,11 @@ INT_PTR CALLBACK NewDiskDlgProc(HWND hWnd, unsigned int Message, WPARAM wParam, 
                     }
                     break;
                 case IDOK:
-                    dict = InitializeDict();
-                    tmp = L"http://www.kuaipan.cn/account_register.htm";
-                    DictSetElement(dict, L"kuaipan", (void *)tmp, WCS_SIZEOF(tmp));
-                    tmp = L"http://weibo.com/signup/signup.php";
-                    DictSetElement(dict, L"vdisk", (void *)tmp, WCS_SIZEOF(tmp));
-                    kuaipan = (WCHAR *)DictGetElement(dict, L"kuaipan");
-                    DictRemoveElement(dict, L"vdisk");
-                    FreeDict(dict);
-                    dict = NULL;
+					http_connect(&conn, "localhost", 80U);
+                    request = http_request_create("/", HTTP_METHOD_GET, NULL);
+					http_request(conn, request, &response);
+                    http_request_destory(&request);
+					http_disconnect(&conn);
                     break;
                 case IDCANCEL:
                     EndDialog(hWnd, IDCANCEL);

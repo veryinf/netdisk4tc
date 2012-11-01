@@ -49,7 +49,6 @@ HANDLE __stdcall FsFindFirstW(WCHAR* Path, WIN32_FIND_DATAW *FindData)
 
 BOOL __stdcall FsFindNextW(HANDLE Hdl,WIN32_FIND_DATAW *FindData)
 {
-    WCHAR buf[PATH_MAX];
     pLastFindStuct lf;
 
     if ((int)Hdl==1)

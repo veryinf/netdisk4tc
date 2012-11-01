@@ -1,7 +1,7 @@
 #include "dictionary.h"
 
 
-DICTIONARY * InitializeDict(void) {
+DICTIONARY * dict_initialize(void) {
     DICTIONARY *dict = (DICTIONARY *)malloc(sizeof(DICTIONARY));
     memset(dict, 0, sizeof(DICTIONARY));
     dict->first = NULL;
@@ -9,7 +9,7 @@ DICTIONARY * InitializeDict(void) {
     return dict;
 }
 
-int DictSetElement(DICTIONARY *pdict, wchar_t *key, const void *value, size_t size) {
+int dict_set_element(DICTIONARY *pdict, wchar_t *key, const void *value, size_t size) {
     void *ret = NULL;
     DICTPAIR *iter, *node = NULL;
     iter = pdict->first;
@@ -26,7 +26,7 @@ int DictSetElement(DICTIONARY *pdict, wchar_t *key, const void *value, size_t si
         free(iter->value);
         iter->value = malloc(size);
         if(!iter->value) {
-            return DICT_FAILED;
+            return DICT_FATAL;
         }
         memcpy(iter->value, value, size);
         iter->size = size;
@@ -34,15 +34,13 @@ int DictSetElement(DICTIONARY *pdict, wchar_t *key, const void *value, size_t si
     } else {
         node = (DICTPAIR*)malloc(sizeof(DICTPAIR));
         memset(node, 0, sizeof(DICTPAIR));
-        node->key = (wchar_t*)malloc(WCS_SIZEOF(key));
+        node->key = _wcsdup(key);
         if(!node->key) {
-            return DICT_FAILED;
+            return DICT_FATAL;
         }
-        memset(node->key, 0, WCS_SIZEOF(key));
-        wcscpy(node->key, key);
         node->value = malloc(size);
         if(!node->value) {
-            return DICT_FAILED;
+            return DICT_FATAL;
         }
         memset(node->value, 0, size);
         memcpy(node->value, value, size);
@@ -58,13 +56,13 @@ int DictSetElement(DICTIONARY *pdict, wchar_t *key, const void *value, size_t si
     }
 }
 
-int DictGetElementS(DICTIONARY *pdict, wchar_t *key, void **value, size_t size) {
+int dict_get_element_s(DICTIONARY *pdict, wchar_t *key, void **value, size_t size) {
     DICTPAIR *iter = pdict->first;
     while(iter != NULL) {
         if(wcscmp(key, iter->key) == 0) {
             *value = malloc(size);
             if (!*value) {
-                return DICT_FAILED;
+                return DICT_FATAL;
             }
             memcpy(*value, iter->value, size);
             return DICT_OK;
@@ -74,7 +72,7 @@ int DictGetElementS(DICTIONARY *pdict, wchar_t *key, void **value, size_t size) 
     return DICT_MISS;
 }
 
-void * DictGetElement(DICTIONARY *pdict, wchar_t *key) {
+void * dict_get_element(DICTIONARY *pdict, wchar_t *key) {
     void *ret = NULL;
     DICTPAIR *iter = pdict->first;
     while(iter != NULL) {
@@ -91,7 +89,7 @@ void * DictGetElement(DICTIONARY *pdict, wchar_t *key) {
     return NULL;
 }
 
-int DictRemoveElement(DICTIONARY *pdict, wchar_t *key) {
+int dict_remove_element(DICTIONARY *pdict, wchar_t *key) {
     DICTPAIR *iter = pdict->first, *hit = NULL;
     while(iter != NULL) {
         if(pdict->first == iter && wcscmp(key, iter->key) == 0) {
@@ -116,28 +114,29 @@ int DictRemoveElement(DICTIONARY *pdict, wchar_t *key) {
     return DICT_MISS;
 }
 
-void DicTraverse(const DICTIONARY *pdict, DictEnumerator enumerator) {
+void dict_traverse(const DICTIONARY *pdict, dict_enumerator enumerator, void **data) {
     DICTPAIR *node = pdict->first;
     while(node != NULL) {
-        if(!enumerator(node->key, node->value, node->size)) {
+        if(!enumerator(node->key, node->value, node->size, data)) {
             break;
         }
         node = node->next;
     }
 }
 
-void FreeDict(DICTIONARY *pdict) {
-    DICTPAIR *iter = pdict->first, *tmp;
+void dict_destory(DICTIONARY **pdict) {
+    DICTPAIR *iter = (*pdict)->first, *tmp;
     while(iter != NULL) {
         tmp = iter;
         iter = iter->next;
         free(tmp->key);
         free(tmp->value);
     }
-    free(pdict);
+    free(*pdict);
+    *pdict = NULL;
 }
 
-size_t DictGetElementSize(DICTIONARY *pdict, wchar_t *key) {
+size_t dict_get_element_size(DICTIONARY *pdict, wchar_t *key) {
     DICTPAIR *iter = pdict->first;
     while(iter != NULL) {
         if(wcscmp(key, iter->key) == 0) {

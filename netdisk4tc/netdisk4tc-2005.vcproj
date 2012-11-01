@@ -61,6 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Ws2_32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).wfx"
 				LinkIncremental="2"
 				ModuleDefinitionFile="ndplugin.def"
@@ -207,6 +208,10 @@
 				RelativePath=".\ui.c"
 				>
 			</File>
+			<File
+				RelativePath=".\utility.c"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -235,6 +240,10 @@
 			</File>
 			<File
 				RelativePath=".\ui.h"
+				>
+			</File>
+			<File
+				RelativePath=".\utility.h"
 				>
 			</File>
 		</Filter>
