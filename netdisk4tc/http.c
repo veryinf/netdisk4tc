@@ -5,6 +5,24 @@
 
 #define RECV_BUFFSIZE (sizeof(char) * 4096)
 
+static int is_init_ssl = FALSE;
+
+static int http_recv(const HTTP_CONNECTION * connection, char * buff, int len) {
+    if(connection->ssl) {
+        return SSL_read(connection->ssl->ssl, buff, len);
+    } else {
+        return recv(connection->socketd, buff, len, 0);
+    }
+}
+
+static int http_send(const HTTP_CONNECTION * connection, const char * buff, int len) {
+    if(connection->ssl) {
+        return SSL_write(connection->ssl->ssl, buff, len);
+    } else {
+        return send(connection->socketd, buff, len, 0);
+    }
+}
+
 int headers_join(const wchar_t *key, const void *value, size_t sz, void **data) {
     char *line = NULL, *val = NULL, *pData = NULL, *nData = NULL;
     size_t size = 0, j = 0;
@@ -107,6 +125,7 @@ void http_request_destory(HTTP_REQUEST **request) {
 HTTP_RESPONSE * http_response_fromstr(const char * data) {
     HTTP_RESPONSE *response = NULL;
     char *line = NULL, *tmp = NULL, *sTmp = NULL;
+    wchar_t *key = NULL;
     size_t i = 0;
     if(data == NULL) {
         return NULL;
@@ -151,13 +170,20 @@ HTTP_RESPONSE * http_response_fromstr(const char * data) {
         line = malloc(i + 1);
         strncpy(line, tmp, i);
         line[i] = '\0';
-
-
         tmp += i + strlen(HTTP_NEWLINE);
         if(strcmp(line, "") == 0) {
             free(line);
             line = NULL;
             break;
+        }
+        i = strcspn(line, ": ");
+        line[i] = '\0';
+        sTmp = line + i + 2;
+        key = ctow(line);
+        if(key != NULL) {
+            dict_set_element(response->headers, key, sTmp, strlen(sTmp) + 1);
+            free(key);
+            key = NULL;
         }
         free(line);
         line = NULL;
@@ -187,7 +213,7 @@ void http_response_destory(HTTP_RESPONSE **response) {
     *response = NULL;
 }
 
-int http_connect(HTTP_CONNECTION **connection, const char *host, unsigned short port) {
+int http_connect(HTTP_CONNECTION **connection, const char *host, unsigned short port, int is_ssl) {
 	unsigned long ipaddr;
 	struct hostent *hostinfo;
 	HTTP_CONNECTION *conn = (HTTP_CONNECTION*)malloc(sizeof(HTTP_CONNECTION));
@@ -195,6 +221,17 @@ int http_connect(HTTP_CONNECTION **connection, const char *host, unsigned short 
 		return HT_MEMORY_ERROR;
 	}
 	memset(conn, 0, sizeof(HTTP_CONNECTION));
+    conn->ssl = NULL;
+    if(is_ssl) {
+        if(!is_init_ssl) {
+            SSL_library_init();
+            is_init_ssl = TRUE;
+        }
+        conn->ssl = malloc(sizeof(HTTP_SSL));
+        conn->ssl->method = SSLv3_client_method();
+        conn->ssl->context = SSL_CTX_new(conn->ssl->method);
+        conn->ssl->ssl = SSL_new(conn->ssl->context);
+    }
     conn->port = port;
 	conn->address.sin_family = PF_INET;
 	conn->address.sin_port = htons(port);
@@ -221,7 +258,13 @@ int http_connect(HTTP_CONNECTION **connection, const char *host, unsigned short 
 		http_disconnect(&conn);
 		return HT_NETWORK_ERROR;
 	}
-	conn->keep_alive = TRUE;
+    if(conn->ssl) {
+        SSL_set_fd(conn->ssl->ssl, conn->socketd);
+        SSL_connect(conn->ssl->ssl);
+        conn->ssl->cert = SSL_get_peer_certificate(conn->ssl->ssl);
+        X509_free(conn->ssl->cert);
+        conn->ssl->cert = NULL;
+    }
 	conn->status = HT_OK;
 	*connection = conn;
 	return HT_OK;
@@ -231,6 +274,12 @@ int http_disconnect(HTTP_CONNECTION **connection) {
 	if(connection == NULL || *connection == NULL) {
 		return HT_INVALID_ARGUMENT;
 	}
+    if((*connection)->ssl) {
+        SSL_shutdown((*connection)->ssl->ssl);
+        SSL_free((*connection)->ssl->ssl);
+        SSL_CTX_free((*connection)->ssl->context);
+        free((*connection)->ssl);
+    }
 	closesocket((*connection)->socketd);
 	free((*connection)->host);
 	free(*connection);
@@ -248,7 +297,7 @@ int http_request(HTTP_CONNECTION *connection, const HTTP_REQUEST *request, HTTP_
     if(connection->status != HT_OK) {
         return HT_RESOURCE_UNAVAILABLE;
     }
-    if(connection->port == 80) {
+    if(connection->port == 80 || connection->port == 443) {
         dict_set_element(request->headers, L"Host", connection->host, strlen(connection->host) + 1);
     } else {
         size = strlen(connection->host) + 7;
@@ -262,10 +311,12 @@ int http_request(HTTP_CONNECTION *connection, const HTTP_REQUEST *request, HTTP_
     dict_set_element(request->headers, L"Connection", tmp, strlen(tmp) + 1);
     tmp = http_request_tostr(request);
 	size = strlen(tmp) + 1;
-	send(connection->socketd, tmp, size, 0);
+    http_send(connection, tmp, size);
+	//write(connection->socketd, tmp, size);
     free(tmp);
     tmp = NULL;
-    while(ret = recv(connection->socketd, buff, RECV_BUFFSIZE, 0)) {
+    //while(ret = recv(connection->socketd, buff, RECV_BUFFSIZE, 0)) {
+    while(ret = http_recv(connection, buff, RECV_BUFFSIZE)) {
         if(ret < RECV_BUFFSIZE) {
             buff[ret] = '\0';
         }

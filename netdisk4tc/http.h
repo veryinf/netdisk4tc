@@ -2,6 +2,8 @@
 #define HTTP_H__
 #include <limits.h>
 #include <winsock.h>
+#include <openssl/ssl.h>
+#include <openssl/x509.h>
 #include "dictionary.h"
 
 #ifndef TRUE
@@ -27,13 +29,20 @@
 #define HTTP_METHOD_GET             0
 #define HTTP_METHOD_POST            1
 
+typedef struct _http_ssl{
+    SSL *ssl;
+    SSL_CTX *context;
+    SSL_METHOD *method;
+    X509 *cert;
+} HTTP_SSL;
+
 typedef struct _http_connection {
     SOCKET socketd;
     char *host;
     unsigned short port;
     struct sockaddr_in address;
-    int keep_alive;
     int status;
+    HTTP_SSL *ssl;
 } HTTP_CONNECTION;
 
 typedef struct _http_request {
@@ -52,7 +61,7 @@ typedef struct _http_response {
     char *body;
 } HTTP_RESPONSE;
 
-int http_connect(HTTP_CONNECTION **, const char *, unsigned short);
+int http_connect(HTTP_CONNECTION **, const char *, unsigned short, int);
 int http_request(HTTP_CONNECTION *, const HTTP_REQUEST *, HTTP_RESPONSE **);
 int http_disconnect(HTTP_CONNECTION **);
 

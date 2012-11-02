@@ -2,6 +2,8 @@
 !.gitignore
 !*.sln
 !/netdisk4tc/
+!/netdisk4tc/lua/
+!/netdisk4tc/api/
 !*.c
 !*.h
 !*.vcproj

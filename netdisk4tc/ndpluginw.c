@@ -2,16 +2,32 @@
 #include "resource.h"
 #include "ui.h"
 #include "utility.h"
+#include "disk.h"
 
 HANDLE hInst;
 int PluginNumber;
 tProgressProcW ProgressProcW = NULL;
 tLogProcW LogProcW = NULL;
 tRequestProcW RequestProcW = NULL;
+wchar_t my_dir[MAX_PATH];
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved) {
+    int i;
     if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
         hInst = hModule;
+        // init
+        GetModuleFileNameW(hInst, my_dir, MAX_PATH);
+        i = MAX_PATH;
+        while (my_dir[--i] != '\\') {
+            my_dir[i] = '\0';
+        }
+        available_disks = dict_initialize();
+    }
+    if(ul_reason_for_call == DLL_PROCESS_DETACH) {
+        // destory
+        if(available_disks != NULL) {
+            dict_destory(available_disks);
+        }
     }
     return TRUE;
 }
