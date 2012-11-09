@@ -32,3 +32,37 @@ wchar_t* ctow(const char *str) {
     }
     return buffer;
 }
+
+char* trim(char *str) {
+    char *str_last, *str_cur;
+    if(str == NULL) {
+        return NULL;
+    }
+    for(; *str == ' ' || *str == '\r' || *str == '\n' || *str == '\t'; ++str) {
+
+    }
+    for(str_last = str_cur = str; *str_cur != '\0'; ++str_cur){
+        if(*str_cur != ' ' && *str_cur != '\r' && *str_cur != '\n' && *str_cur != '\t') {
+            str_last = str_cur;
+        }
+    }
+    *++str_last = '\0';
+    return str;
+}
+
+wchar_t* wtrim(wchar_t *wstr) {
+    char *wstr_last, *wstr_cur;
+    if(wstr == NULL) {
+        return NULL;
+    }
+    for(; *wstr == ' ' || *wstr == '\r' || *wstr == '\n' || *wstr == '\t'; ++wstr) {
+
+    }
+    for(wstr_last = wstr_cur = wstr; *wstr_cur != '\0'; ++wstr_cur){
+        if(*wstr_cur != ' ' && *wstr_cur != '\r' && *wstr_cur != '\n' && *wstr_cur != '\t') {
+            wstr_last = wstr_cur;
+        }
+    }
+    *++wstr_last = '\0';
+    return wstr;
+}

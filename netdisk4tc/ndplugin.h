@@ -11,6 +11,18 @@
 #define FS_EXEC_YOURSELF -1
 #define FS_EXEC_SYMLINK -2
 
+#define RT_Other 0
+#define RT_UserName 1
+#define RT_Password 2
+#define RT_Account 3
+#define RT_UserNameFirewall 4
+#define RT_PasswordFirewall 5
+#define RT_TargetDir 6
+#define RT_URL 7
+#define RT_MsgOK 8
+#define RT_MsgYesNo 9
+#define RT_MsgOKCancel 10
+
 #define MSGTYPE_CONNECT 1
 #define MSGTYPE_DISCONNECT 2
 #define MSGTYPE_DETAILS 3

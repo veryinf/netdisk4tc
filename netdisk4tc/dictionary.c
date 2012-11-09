@@ -9,7 +9,7 @@ DICTIONARY * dict_initialize(void) {
     return dict;
 }
 
-int dict_set_element(DICTIONARY *pdict, wchar_t *key, const void *value, size_t size) {
+int dict_set_element_s(DICTIONARY *pdict, wchar_t *key, const void *value, size_t size, dict_destroyer destroyer) {
     void *ret = NULL;
     DICTPAIR *iter, *node = NULL;
     iter = pdict->first;
@@ -23,7 +23,11 @@ int dict_set_element(DICTIONARY *pdict, wchar_t *key, const void *value, size_t 
         iter = iter->next;
     }
     if(node != NULL) {
-        free(iter->value);
+        if(iter->destroyer) {
+            iter->destroyer(&iter->value);
+        } else {
+            free(iter->value);
+        }
         iter->value = malloc(size);
         if(!iter->value) {
             return DICT_FATAL;
@@ -44,6 +48,7 @@ int dict_set_element(DICTIONARY *pdict, wchar_t *key, const void *value, size_t 
         }
         memset(node->value, 0, size);
         memcpy(node->value, value, size);
+        node->destroyer = destroyer;
         node->size = size;
         node->next = NULL;
         if(iter) {
@@ -54,6 +59,10 @@ int dict_set_element(DICTIONARY *pdict, wchar_t *key, const void *value, size_t 
         pdict->length++;
         return DICT_OK;
     }
+}
+
+int dict_set_element(DICTIONARY *pdict, wchar_t *key, const void *value, size_t size) {
+    return dict_set_element_s(pdict, key, value, size, NULL);
 }
 
 int dict_get_element_s(DICTIONARY *pdict, wchar_t *key, void **value, size_t size) {
@@ -89,6 +98,17 @@ void * dict_get_element(DICTIONARY *pdict, wchar_t *key) {
     return NULL;
 }
 
+int dict_exists(DICTIONARY *pdict, wchar_t *key) {
+    DICTPAIR *iter = pdict->first;
+    while(iter != NULL) {
+        if(wcscmp(key, iter->key) == 0) {
+            return TRUE;
+        }
+        iter = iter->next;
+    }
+    return FALSE;
+}
+
 int dict_remove_element(DICTIONARY *pdict, wchar_t *key) {
     DICTPAIR *iter = pdict->first, *hit = NULL;
     while(iter != NULL) {
@@ -106,7 +126,11 @@ int dict_remove_element(DICTIONARY *pdict, wchar_t *key) {
     }
     if(hit) {
         free(hit->key);
-        free(hit->value);
+        if(hit->destroyer) {
+            hit->destroyer(&hit->value);
+        } else {
+            free(hit->value);
+        }
         free(hit);
         pdict->length--;
         return DICT_OK;
@@ -124,13 +148,17 @@ void dict_traverse(const DICTIONARY *pdict, dict_enumerator enumerator, void **d
     }
 }
 
-void dict_destory(DICTIONARY **pdict) {
+void dict_destroy(DICTIONARY **pdict) {
     DICTPAIR *iter = (*pdict)->first, *tmp;
     while(iter != NULL) {
         tmp = iter;
         iter = iter->next;
         free(tmp->key);
-        free(tmp->value);
+        if(tmp->destroyer) {
+            tmp->destroyer(&tmp->value);
+        } else {
+            free(tmp->value);
+        }
     }
     free(*pdict);
     *pdict = NULL;

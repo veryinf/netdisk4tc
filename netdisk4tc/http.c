@@ -116,7 +116,7 @@ void http_request_destory(HTTP_REQUEST **request) {
         free(req->version);
     }
     if(req->headers != NULL) {
-        dict_destory(&req->headers);
+        dict_destroy(&req->headers);
     }
     free(*request);
     *request = NULL;
@@ -207,20 +207,20 @@ void http_response_destory(HTTP_RESPONSE **response) {
         free(rep->version);
     }
     if(rep->headers != NULL) {
-        dict_destory(&rep->headers);
+        dict_destroy(&rep->headers);
     }
     free(*response);
     *response = NULL;
 }
 
 int http_connect(HTTP_CONNECTION **connection, const char *host, unsigned short port, int is_ssl) {
-	unsigned long ipaddr;
-	struct hostent *hostinfo;
-	HTTP_CONNECTION *conn = (HTTP_CONNECTION*)malloc(sizeof(HTTP_CONNECTION));
-	if(conn == NULL) {
-		return HT_MEMORY_ERROR;
-	}
-	memset(conn, 0, sizeof(HTTP_CONNECTION));
+    unsigned long ipaddr;
+    struct hostent *hostinfo;
+    HTTP_CONNECTION *conn = (HTTP_CONNECTION*)malloc(sizeof(HTTP_CONNECTION));
+    if(conn == NULL) {
+        return HT_MEMORY_ERROR;
+    }
+    memset(conn, 0, sizeof(HTTP_CONNECTION));
     conn->ssl = NULL;
     if(is_ssl) {
         if(!is_init_ssl) {
@@ -233,31 +233,31 @@ int http_connect(HTTP_CONNECTION **connection, const char *host, unsigned short 
         conn->ssl->ssl = SSL_new(conn->ssl->context);
     }
     conn->port = port;
-	conn->address.sin_family = PF_INET;
-	conn->address.sin_port = htons(port);
-	if((ipaddr = inet_addr(host)) != INADDR_NONE) {
-		memcpy(&conn->address.sin_addr, &ipaddr, sizeof(struct in_addr));
-	} else {
-		hostinfo = (struct hostent *)gethostbyname(host);
-		if(hostinfo == NULL) {
-			return HT_HOST_UNAVAILABLE;
-		}
-		memcpy(&conn->address.sin_addr, hostinfo->h_addr, 4);
-	}
-	conn->host = _strdup(host);
-	if(conn->host == NULL) {
-		http_disconnect(&conn);
-		return HT_MEMORY_ERROR;
-	}
-	conn->socketd = socket(PF_INET, SOCK_STREAM, 0);
-	if(conn->socketd == INVALID_SOCKET) {
-		http_disconnect(&conn);
-		return HT_RESOURCE_UNAVAILABLE;
-	}
-	if(connect(conn->socketd, (struct sockaddr *) &conn->address, sizeof(struct sockaddr_in)) != 0)	{
-		http_disconnect(&conn);
-		return HT_NETWORK_ERROR;
-	}
+    conn->address.sin_family = PF_INET;
+    conn->address.sin_port = htons(port);
+    if((ipaddr = inet_addr(host)) != INADDR_NONE) {
+        memcpy(&conn->address.sin_addr, &ipaddr, sizeof(struct in_addr));
+    } else {
+        hostinfo = (struct hostent *)gethostbyname(host);
+        if(hostinfo == NULL) {
+            return HT_HOST_UNAVAILABLE;
+        }
+        memcpy(&conn->address.sin_addr, hostinfo->h_addr, 4);
+    }
+    conn->host = _strdup(host);
+    if(conn->host == NULL) {
+        http_disconnect(&conn);
+        return HT_MEMORY_ERROR;
+    }
+    conn->socketd = socket(PF_INET, SOCK_STREAM, 0);
+    if(conn->socketd == INVALID_SOCKET) {
+        http_disconnect(&conn);
+        return HT_RESOURCE_UNAVAILABLE;
+    }
+    if(connect(conn->socketd, (struct sockaddr *) &conn->address, sizeof(struct sockaddr_in)) != 0)    {
+        http_disconnect(&conn);
+        return HT_NETWORK_ERROR;
+    }
     if(conn->ssl) {
         SSL_set_fd(conn->ssl->ssl, conn->socketd);
         SSL_connect(conn->ssl->ssl);
@@ -265,31 +265,31 @@ int http_connect(HTTP_CONNECTION **connection, const char *host, unsigned short 
         X509_free(conn->ssl->cert);
         conn->ssl->cert = NULL;
     }
-	conn->status = HT_OK;
-	*connection = conn;
-	return HT_OK;
+    conn->status = HT_OK;
+    *connection = conn;
+    return HT_OK;
 }
 
 int http_disconnect(HTTP_CONNECTION **connection) {
-	if(connection == NULL || *connection == NULL) {
-		return HT_INVALID_ARGUMENT;
-	}
+    if(connection == NULL || *connection == NULL) {
+        return HT_INVALID_ARGUMENT;
+    }
     if((*connection)->ssl) {
         SSL_shutdown((*connection)->ssl->ssl);
         SSL_free((*connection)->ssl->ssl);
         SSL_CTX_free((*connection)->ssl->context);
         free((*connection)->ssl);
     }
-	closesocket((*connection)->socketd);
-	free((*connection)->host);
-	free(*connection);
-	*connection = NULL;
-	return HT_OK;
+    closesocket((*connection)->socketd);
+    free((*connection)->host);
+    free(*connection);
+    *connection = NULL;
+    return HT_OK;
 }
 
 int http_request(HTTP_CONNECTION *connection, const HTTP_REQUEST *request, HTTP_RESPONSE **response) {
-	char buff[RECV_BUFFSIZE], *tmp = NULL, *nTmp = NULL;
-	int ret;
+    char buff[RECV_BUFFSIZE], *tmp = NULL, *nTmp = NULL;
+    int ret;
     size_t size = 0, i = 0, j = 0;
     if(connection == NULL || request == NULL || response == NULL) {
         return HT_INVALID_ARGUMENT;
@@ -310,9 +310,9 @@ int http_request(HTTP_CONNECTION *connection, const HTTP_REQUEST *request, HTTP_
     tmp = "Close";
     dict_set_element(request->headers, L"Connection", tmp, strlen(tmp) + 1);
     tmp = http_request_tostr(request);
-	size = strlen(tmp) + 1;
+    size = strlen(tmp) + 1;
     http_send(connection, tmp, size);
-	//write(connection->socketd, tmp, size);
+    //write(connection->socketd, tmp, size);
     free(tmp);
     tmp = NULL;
     //while(ret = recv(connection->socketd, buff, RECV_BUFFSIZE, 0)) {
@@ -338,5 +338,5 @@ int http_request(HTTP_CONNECTION *connection, const HTTP_REQUEST *request, HTTP_
     if(tmp != NULL) {
         free(tmp);
     }
-	return HT_OK;
+    return HT_OK;
 }

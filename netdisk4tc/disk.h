@@ -20,12 +20,13 @@ extern DICTIONARY *available_disks;
 
 typedef struct _disk{
     unsigned short type_id;
-    wchar_t *  username;
-    wchar_t *  token;
-    wchar_t *  secret;
+    wchar_t * username;
+    wchar_t * password;
     wchar_t * nickname;
+    wchar_t * token;
+    wchar_t * secret;
 } NDISK;
 
-
+void ndisk_destroy(NDISK **);
 
 #endif

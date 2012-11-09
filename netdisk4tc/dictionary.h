@@ -9,10 +9,13 @@
 #define DICT_FATAL 1
 #define DICT_MISS 2
 
+typedef void (*dict_destroyer)(void **);
+
 typedef struct _pair {
     wchar_t *key;
     size_t size;
     void *value;
+    dict_destroyer destroyer;
     struct _pair *next;
 } DICTPAIR;
 
@@ -62,6 +65,18 @@ int dict_get_element_s(DICTIONARY *, wchar_t *, void **, size_t);
 void * dict_get_element(DICTIONARY *, wchar_t *);
 
 //************************************
+// Returns:   int
+// Description: 判断字典中是否存在指定键名
+//************************************
+int dict_exists(DICTIONARY *, wchar_t *);
+
+//************************************
+// Returns:   int 成功返回 DICT_OK，否则返回 DICT_FAILED
+// Description: 按照键名更新指定字典的特定条目, 附加的参数说明如何释放给定的数据（如果给定的数据包含多级的分配内存较为有用）
+//************************************
+int dict_set_element_s(DICTIONARY *, wchar_t *, const void *, size_t, dict_destroyer);
+
+//************************************
 // Returns:   int 成功返回 DICT_OK，否则返回 DICT_FAILED
 // Description: 按照键名更新指定字典的特定条目
 //************************************
@@ -77,6 +92,5 @@ void dict_traverse(const DICTIONARY *, dict_enumerator, void **);
 // Returns:   void
 // Description: 销毁指定的字典
 //************************************
-void dict_destory(DICTIONARY **);
-
+void dict_destroy(DICTIONARY **);
 #endif
