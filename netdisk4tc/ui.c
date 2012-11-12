@@ -10,7 +10,7 @@
 INT_PTR CALLBACK NewDiskDlgProc(HWND hWnd, unsigned int Message, WPARAM wParam, LPARAM lParam) {
     WCHAR buff[INPUT_MAX];
     WCHAR *tmp;
-    NDISK *disk = NULL;
+    NDisk *disk = NULL;
     int i = 0;
     //HTTP_CONNECTION *conn;
     //HTTP_REQUEST *request;
@@ -18,8 +18,8 @@ INT_PTR CALLBACK NewDiskDlgProc(HWND hWnd, unsigned int Message, WPARAM wParam, 
     //lua_State *L;
     switch (Message) {
         case WM_INITDIALOG:
-            for(i = NDISK_FIRST_DISK; i <= NDISK_LAST_DISK; i++) {
-                SendDlgItemMessageW(hWnd, IDC_COMBOBOX_TYPE, CB_ADDSTRING, 0, (LPARAM)available_disk_types[i].description);
+            for(i = 0; i < available_disk_entries_length; i++) {
+                SendDlgItemMessageW(hWnd, IDC_COMBOBOX_TYPE, CB_ADDSTRING, 0, (LPARAM)available_disk_entries[i].description);
             }
             SendDlgItemMessageW(hWnd, IDC_COMBOBOX_TYPE, CB_SETCURSEL, 0, (LPARAM)NULL);
             break;
@@ -27,27 +27,27 @@ INT_PTR CALLBACK NewDiskDlgProc(HWND hWnd, unsigned int Message, WPARAM wParam, 
             switch(LOWORD(wParam)) {
                 case IDC_BUTTON_REGISTER:
                     GetDlgItemTextW(hWnd, IDC_COMBOBOX_TYPE, (LPWSTR)&buff, INPUT_MAX);
-                    for(i = NDISK_FIRST_DISK; i <= NDISK_LAST_DISK; i++) {
-                        if(wcscmp(buff, available_disk_types[i].description) == 0) {
-                            ShellExecuteW(NULL, L"open", available_disk_types[i].signin, NULL, NULL, SW_SHOWNORMAL);
+                    for(i = 0; i < available_disk_entries_length; i++) {
+                        if(wcscmp(buff, available_disk_entries[i].description) == 0) {
+                            ShellExecuteW(NULL, L"open", available_disk_entries[i].signin, NULL, NULL, SW_SHOWNORMAL);
                             break;
                         }
                     }
                     break;
                 case IDOK:
-                    disk = malloc(sizeof(NDISK));
-                    memset(disk, 0, sizeof(NDISK));
+                    disk = malloc(sizeof(NDisk));
+                    memset(disk, 0, sizeof(NDisk));
                     GetDlgItemTextW(hWnd, IDC_COMBOBOX_TYPE, (LPWSTR)&buff, INPUT_MAX);
-                    for(i = NDISK_FIRST_DISK; i <= NDISK_LAST_DISK; i++) {
-                        if(wcscmp(buff, available_disk_types[i].description) == 0) {
-                            disk->type_id = available_disk_types[i].type_id;
+                    for(i = 0; i < available_disk_entries_length; i++) {
+                        if(wcscmp(buff, available_disk_entries[i].description) == 0) {
+                            disk->type_id = available_disk_entries[i].type_id;
                             break;
                         }
                     }
                     GetDlgItemTextW(hWnd, IDC_EDIT_USERNAME, (LPWSTR)&buff, INPUT_MAX);
                     tmp = wtrim(buff);
                     if(wcscmp(tmp, L"") == 0) {
-                        MessageBoxW(hWnd, L"没有输入用户名. ", L"提示", MB_OK);
+                        MessageBoxW(hWnd, L"没有输入用户名.", L"提示", MB_OK);
                         break;
                     }
                     disk->username = _wcsdup(tmp);
@@ -58,7 +58,7 @@ INT_PTR CALLBACK NewDiskDlgProc(HWND hWnd, unsigned int Message, WPARAM wParam, 
                     tmp = wtrim(buff);
                     if(wcscmp(tmp, L"") == 0) {
                         memset(tmp, 0, INPUT_MAX);
-                        wcscpy_s(tmp, INPUT_MAX, available_disk_types[i].description);
+                        wcscpy_s(tmp, INPUT_MAX, available_disk_entries[i].description);
                         wcscat_s(tmp, INPUT_MAX, L"(");
                         wcscat_s(tmp, INPUT_MAX, disk->username);
                         wcscat_s(tmp, INPUT_MAX, L")");
@@ -70,7 +70,7 @@ INT_PTR CALLBACK NewDiskDlgProc(HWND hWnd, unsigned int Message, WPARAM wParam, 
                             return 1;
                         }
                     }
-                    dict_set_element_s(available_disks, disk->nickname, disk, sizeof(NDISK), ndisk_destroy);
+                    dict_set_element_s(available_disks, disk->nickname, disk, sizeof(NDisk), ndisk_destroy);
                     free(disk);
                     disk = NULL;
                     EndDialog(hWnd, IDOK);

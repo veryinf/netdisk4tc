@@ -1,17 +1,17 @@
 #include "dictionary.h"
 
 
-DICTIONARY * dict_initialize(void) {
-    DICTIONARY *dict = (DICTIONARY *)malloc(sizeof(DICTIONARY));
-    memset(dict, 0, sizeof(DICTIONARY));
+Dictionary * dict_initialize(void) {
+    Dictionary *dict = (Dictionary *)malloc(sizeof(Dictionary));
+    memset(dict, 0, sizeof(Dictionary));
     dict->first = NULL;
     dict->length = 0;
     return dict;
 }
 
-int dict_set_element_s(DICTIONARY *pdict, wchar_t *key, const void *value, size_t size, dict_destroyer destroyer) {
+int dict_set_element_s(Dictionary *pdict, wchar_t *key, const void *value, size_t size, dict_destroyer destroyer) {
     void *ret = NULL;
-    DICTPAIR *iter, *node = NULL;
+    DictEntry *iter, *node = NULL;
     iter = pdict->first;
     while(iter != NULL) {
         if(wcscmp(key, iter->key) == 0) {
@@ -36,8 +36,8 @@ int dict_set_element_s(DICTIONARY *pdict, wchar_t *key, const void *value, size_
         iter->size = size;
         return DICT_OK;
     } else {
-        node = (DICTPAIR*)malloc(sizeof(DICTPAIR));
-        memset(node, 0, sizeof(DICTPAIR));
+        node = (DictEntry*)malloc(sizeof(DictEntry));
+        memset(node, 0, sizeof(DictEntry));
         node->key = _wcsdup(key);
         if(!node->key) {
             return DICT_FATAL;
@@ -61,12 +61,12 @@ int dict_set_element_s(DICTIONARY *pdict, wchar_t *key, const void *value, size_
     }
 }
 
-int dict_set_element(DICTIONARY *pdict, wchar_t *key, const void *value, size_t size) {
+int dict_set_element(Dictionary *pdict, wchar_t *key, const void *value, size_t size) {
     return dict_set_element_s(pdict, key, value, size, NULL);
 }
 
-int dict_get_element_s(DICTIONARY *pdict, wchar_t *key, void **value, size_t size) {
-    DICTPAIR *iter = pdict->first;
+int dict_get_element_s(Dictionary *pdict, wchar_t *key, void **value, size_t size) {
+    DictEntry *iter = pdict->first;
     while(iter != NULL) {
         if(wcscmp(key, iter->key) == 0) {
             *value = malloc(size);
@@ -81,9 +81,9 @@ int dict_get_element_s(DICTIONARY *pdict, wchar_t *key, void **value, size_t siz
     return DICT_MISS;
 }
 
-void * dict_get_element(DICTIONARY *pdict, wchar_t *key) {
+void * dict_get_element(Dictionary *pdict, wchar_t *key) {
     void *ret = NULL;
-    DICTPAIR *iter = pdict->first;
+    DictEntry *iter = pdict->first;
     while(iter != NULL) {
         if(wcscmp(key, iter->key) == 0) {
             ret = malloc(iter->size);
@@ -98,8 +98,8 @@ void * dict_get_element(DICTIONARY *pdict, wchar_t *key) {
     return NULL;
 }
 
-int dict_exists(DICTIONARY *pdict, wchar_t *key) {
-    DICTPAIR *iter = pdict->first;
+int dict_exists(Dictionary *pdict, wchar_t *key) {
+    DictEntry *iter = pdict->first;
     while(iter != NULL) {
         if(wcscmp(key, iter->key) == 0) {
             return TRUE;
@@ -109,8 +109,8 @@ int dict_exists(DICTIONARY *pdict, wchar_t *key) {
     return FALSE;
 }
 
-int dict_remove_element(DICTIONARY *pdict, wchar_t *key) {
-    DICTPAIR *iter = pdict->first, *hit = NULL;
+int dict_remove_element(Dictionary *pdict, wchar_t *key) {
+    DictEntry *iter = pdict->first, *hit = NULL;
     while(iter != NULL) {
         if(pdict->first == iter && wcscmp(key, iter->key) == 0) {
             pdict->first = iter->next;
@@ -138,8 +138,8 @@ int dict_remove_element(DICTIONARY *pdict, wchar_t *key) {
     return DICT_MISS;
 }
 
-void dict_traverse(const DICTIONARY *pdict, dict_enumerator enumerator, void **data) {
-    DICTPAIR *node = pdict->first;
+void dict_traverse(const Dictionary *pdict, dict_enumerator enumerator, void **data) {
+    DictEntry *node = pdict->first;
     while(node != NULL) {
         if(!enumerator(node->key, node->value, node->size, data)) {
             break;
@@ -148,8 +148,8 @@ void dict_traverse(const DICTIONARY *pdict, dict_enumerator enumerator, void **d
     }
 }
 
-void dict_destroy(DICTIONARY **pdict) {
-    DICTPAIR *iter = (*pdict)->first, *tmp;
+void dict_destroy(Dictionary **pdict) {
+    DictEntry *iter = (*pdict)->first, *tmp;
     while(iter != NULL) {
         tmp = iter;
         iter = iter->next;
@@ -164,8 +164,8 @@ void dict_destroy(DICTIONARY **pdict) {
     *pdict = NULL;
 }
 
-size_t dict_get_element_size(DICTIONARY *pdict, wchar_t *key) {
-    DICTPAIR *iter = pdict->first;
+size_t dict_get_element_size(Dictionary *pdict, wchar_t *key) {
+    DictEntry *iter = pdict->first;
     while(iter != NULL) {
         if(wcscmp(key, iter->key) == 0) {
             return iter->size;

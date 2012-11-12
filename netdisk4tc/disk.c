@@ -3,19 +3,15 @@
 #include "disk.h"
 
 static wchar_t *_config_file = L"netdisks.ini";
-NDISK_TYPE available_disk_types[] = {
-    {NDISK_SKYDRIVE, L"Microsoft SkyDrive", L"https://signup.live.com/signup.aspx"},
-    {NDISK_KUAIPAN, L"金山快盘", L"http://www.kuaipan.cn/account_register.htm"},
-    {NDISK_VDISK, L"新浪微盘", L"http://weibo.com/signup/signup.php"}
-};
-
-DICTIONARY *available_disks = NULL;
+NDisk_Entry *available_disk_entries = NULL;
+size_t available_disk_entries_length = 0;
+Dictionary *available_disks = NULL;
 
 void disk_set() {
 
 }
 
-void ndisk_destroy(NDISK **disk) {
+void ndisk_destroy(NDisk **disk) {
     if((*disk) == NULL) {
         return;
     }

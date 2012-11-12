@@ -49,7 +49,7 @@ typedef struct _http_request {
     int method;
     char *path;
     char *version;
-    DICTIONARY *headers;
+    Dictionary *headers;
     char *body;
 } HTTP_REQUEST;
 
@@ -57,7 +57,7 @@ typedef struct _http_response {
     char *version;
     int status_code;
     char *status_msg;
-    DICTIONARY *headers;
+    Dictionary *headers;
     char *body;
 } HTTP_RESPONSE;
 

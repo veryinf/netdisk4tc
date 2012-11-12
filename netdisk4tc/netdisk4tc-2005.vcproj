@@ -137,6 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Ws2_32.lib d:\OpenSSL-Win32\lib\VC\static\libeay32MDd.lib d:\OpenSSL-Win32\lib\VC\static\ssleay32MDd.lib"
 				OutputFile="$(OutDir)\$(ProjectName).wfx"
 				LinkIncremental="1"
 				ModuleDefinitionFile="ndplugin.def"

@@ -33,6 +33,17 @@ wchar_t* ctow(const char *str) {
     return buffer;
 }
 
+char* wtoc(const wchar_t *str) {
+    char* buffer = NULL;
+    size_t size = 0;
+    if(str) {
+        size =(size_t) WideCharToMultiByte(CP_OEMCP, 0, str, -1, NULL, 0, NULL, FALSE);
+        buffer = (char *)calloc(size, sizeof(char));
+        WideCharToMultiByte(CP_OEMCP, 0, str, -1, buffer, size, NULL, FALSE);
+    }
+    return buffer;
+}
+
 char* trim(char *str) {
     char *str_last, *str_cur;
     if(str == NULL) {

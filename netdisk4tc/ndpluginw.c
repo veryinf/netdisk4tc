@@ -11,10 +11,16 @@ tProgressProcW ProgressProcW = NULL;
 tLogProcW LogProcW = NULL;
 tRequestProcW RequestProcW = NULL;
 wchar_t my_dir[MAX_PATH];
-lua_State *Lua;
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved) {
-    int i;
+    int i = 0;
+    WIN32_FIND_DATAW fData;
+    wchar_t tmp[PATH_MAX];
+    char *sTmp;
+    HANDLE fHandle = NULL;
+    lua_State *lua = NULL;
+    NDisk_Entry *pEntry = NULL;
+
     if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
         hInst = hModule;
         // init
@@ -23,17 +29,77 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
         while (my_dir[--i] != '\\') {
             my_dir[i] = '\0';
         }
+        wcslcpy(tmp, my_dir, PATH_MAX);
+        wcscat_s(tmp, PATH_MAX, L"entries\\*.lua");
+        fHandle = FindFirstFileW(tmp, &fData);
+        if(fHandle) {
+            i = 0;
+            while(TRUE) {
+                lua = NULL;
+                lua = luaL_newstate();
+                luaL_openlibs(lua);
+                wcslcpy(tmp, my_dir, PATH_MAX);
+                wcscat_s(tmp, PATH_MAX, L"entries\\");
+                wcscat_s(tmp, PATH_MAX, fData.cFileName);
+                sTmp = wtoc(tmp);
+                if(luaL_loadfile(lua, sTmp) || lua_pcall(lua, 0, 0, 0)) {
+                    lua_close(lua);
+                    if(!FindNextFileW(fHandle, &fData)) {
+                        break;
+                    }
+                    continue;
+                }
+                free(sTmp);
+                sTmp = NULL;
+                lua_getglobal(lua, "signin");
+                lua_getglobal(lua, "description");
+                if(!lua_isstring(lua, -2)) {
+                    lua_close(lua);
+                    if(!FindNextFileW(fHandle, &fData)) {
+                        break;
+                    }
+                    continue;
+                }
+                if(!lua_isstring(lua, -1)) {
+                    lua_close(lua);
+                    if(!FindNextFileW(fHandle, &fData)) {
+                        break;
+                    }
+                    continue;
+                }
+                if(available_disk_entries == NULL) {
+                    available_disk_entries = malloc(sizeof(NDisk_Entry));
+                } else {
+                    pEntry = realloc(available_disk_entries, (i + 1) * sizeof(NDisk_Entry));
+                    if(pEntry != available_disk_entries) {
+                        available_disk_entries = pEntry;
+                    }
+                }
+                available_disk_entries[i].type_id = i;
+                available_disk_entries[i].description = ctow(lua_tostring(lua, -1));
+                available_disk_entries[i].signin = ctow(lua_tostring(lua, -2));
+                available_disk_entries[i].script = lua;
+                i++;
+                if(!FindNextFileW(fHandle, &fData)) {
+                    break;
+                }
+            }
+        }
+        available_disk_entries_length = i;
         available_disks = dict_initialize();
-        Lua = luaL_newstate();
-        luaL_openlibs(Lua);
-        luaL_dofile(L, "test.lua");
     }
     if(ul_reason_for_call == DLL_PROCESS_DETACH) {
         // destory
+        if(available_disk_entries != NULL) {
+            for(i = 0; i < available_disk_entries_length; i++) {
+                free(available_disk_entries[i].description);
+                free(available_disk_entries[i].signin);
+                lua_close(available_disk_entries[i].script);
+            }
+        }
         if(available_disks != NULL) {
             dict_destroy(&available_disks);
         }
-        lua_close(Lua);
     }
     return TRUE;
 }
@@ -51,10 +117,10 @@ int __stdcall FsInitW(int PluginNr, tProgressProcW pProgressProcW, tLogProcW pLo
 }
 
 typedef struct {
-    NDISK * disk;
+    NDisk * disk;
     wchar_t subPath[PATH_MAX];
     wchar_t path[PATH_MAX];
-    DICTPAIR * findHandle;
+    DictEntry * findHandle;
     int isLast;
 } FindStruc;
 
@@ -94,7 +160,7 @@ HANDLE __stdcall FsFindFirstW(WCHAR* Path, WIN32_FIND_DATAW *FindData) {
 
 BOOL __stdcall FsFindNextW(HANDLE Hdl,WIN32_FIND_DATAW *FindData) {
     FindStruc *pFind = (FindStruc *)Hdl;
-    NDISK *disk = NULL;
+    NDisk *disk = NULL;
     if(pFind == NULL || pFind->isLast) {
         return FALSE;
     }
@@ -108,7 +174,7 @@ BOOL __stdcall FsFindNextW(HANDLE Hdl,WIN32_FIND_DATAW *FindData) {
             pFind->isLast = TRUE;
             return pFind;
         } else {
-            disk = (NDISK *)pFind->findHandle->value;
+            disk = (NDisk *)pFind->findHandle->value;
             FindData->dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
             FindData->ftLastWriteTime.dwHighDateTime = 0xFFFFFFFF;
             FindData->ftLastWriteTime.dwLowDateTime = 0xFFFFFFFE;

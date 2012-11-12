@@ -2,21 +2,18 @@
 #define DISKS_H_
 #include <stdlib.h>
 #include "dictionary.h"
-
-#define NDISK_FIRST_DISK    0x00
-#define NDISK_SKYDRIVE      0x00
-#define NDISK_KUAIPAN       0x01
-#define NDISK_VDISK         0x02
-#define NDISK_LAST_DISK     0x02
+#include "lua/lauxlib.h"
 
 typedef struct _ndisk_type {
     unsigned short type_id;
     wchar_t * description;
     wchar_t * signin;
-} NDISK_TYPE;
+    lua_State *script;
+} NDisk_Entry;
 
-extern NDISK_TYPE available_disk_types[];
-extern DICTIONARY *available_disks;
+extern NDisk_Entry *available_disk_entries;
+extern size_t available_disk_entries_length;
+extern Dictionary *available_disks;
 
 typedef struct _disk{
     unsigned short type_id;
@@ -25,8 +22,8 @@ typedef struct _disk{
     wchar_t * nickname;
     wchar_t * token;
     wchar_t * secret;
-} NDISK;
+} NDisk;
 
-void ndisk_destroy(NDISK **);
+void ndisk_destroy(NDisk **);
 
 #endif
