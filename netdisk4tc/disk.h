@@ -28,6 +28,7 @@ typedef struct _disk{
 } NDisk;
 
 void ndisk_destroy(NDisk **);
+void ndisk_destroy_s(void **);
 void ndisks_save(void);
 void ndisks_load(void);
 

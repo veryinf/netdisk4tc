@@ -29,7 +29,7 @@ INT_PTR CALLBACK NewDiskDlgProc(HWND hWnd, unsigned int Message, WPARAM wParam, 
                     }
                     break;
                 case IDOK:
-                    disk = malloc(sizeof(NDisk));
+                    disk = (NDisk *)malloc(sizeof(NDisk));
                     memset(disk, 0, sizeof(NDisk));
                     GetDlgItemTextW(hWnd, IDC_COMBOBOX_TYPE, (LPWSTR)&buff, INPUT_MAX);
                     for(i = 0; i < available_disk_entries_length; i++) {
@@ -64,7 +64,7 @@ INT_PTR CALLBACK NewDiskDlgProc(HWND hWnd, unsigned int Message, WPARAM wParam, 
                             return 1;
                         }
                     }
-                    dict_set_element_s(available_disks, disk->nickname, disk, sizeof(NDisk), ndisk_destroy);
+                    dict_set_element_s(available_disks, disk->nickname, disk, sizeof(NDisk), ndisk_destroy_s);
                     ndisks_save();
                     free(disk);
                     disk = NULL;

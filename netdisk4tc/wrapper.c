@@ -26,5 +26,6 @@ int wp_http(lua_State * l) {
     //response = NULL;
     //http_disconnect(&conn);
     //conn = NULL;
+    return 0;
 }
 

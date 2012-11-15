@@ -29,14 +29,14 @@ int headers_join(const wchar_t *key, const void *value, size_t sz, void **data) 
     val = (char *)value;
     pData = (char *)(*data);
     size = WCS_SIZEOF(key) + strlen(val) + 5;
-    line = malloc(size);
+    line = (char *)malloc(size);
     j = sprintf_s(line, size, "%ls: %s%s", key, val, HTTP_NEWLINE);
     if(pData == NULL) {
-        pData = malloc(strlen(line) + 1);
+        pData = (char *)malloc(strlen(line) + 1);
         pData = _strdup(line);
     } else {
         size = strlen(pData) + strlen(line) + 1;
-        nData = realloc(pData, size);
+        nData = (char *)realloc(pData, size);
         if(pData != nData) {
             pData = nData;
         }
@@ -79,10 +79,10 @@ char* http_request_tostr(const HTTP_REQUEST *request) {
     ret = _strdup(tmp);
     free(tmp);
     tmp = NULL;
-    dict_traverse(request->headers, headers_join, &headers);
+    dict_traverse(request->headers, headers_join, (void **)&headers);
     if(headers != NULL) {
         size = strlen(ret) + strlen(headers) + 1;
-        nRet = realloc(ret, size);
+        nRet = (char *)realloc(ret, size);
         if(nRet != ret) {
             ret = nRet;
         }
@@ -92,7 +92,7 @@ char* http_request_tostr(const HTTP_REQUEST *request) {
         headers = NULL;
     }
     size = strlen(ret) + 3;
-    nRet = realloc(ret, size);
+    nRet = (char *)realloc(ret, size);
     if(nRet != ret) {
         ret = nRet;
     }
@@ -130,11 +130,11 @@ HTTP_RESPONSE * http_response_fromstr(const char * data) {
     if(data == NULL) {
         return NULL;
     }
-    response = malloc(sizeof(HTTP_RESPONSE));
+    response = (HTTP_RESPONSE *)malloc(sizeof(HTTP_RESPONSE));
     memset(response, 0, sizeof(HTTP_RESPONSE));
-    tmp = data;
+    tmp = (char *)data;
     i = strcspn(tmp, HTTP_NEWLINE);
-    line = malloc(i + 1);
+    line = (char *)malloc(i + 1);
     strncpy(line, tmp, i);
     line[i] = '\0';
     tmp += i + strlen(HTTP_NEWLINE);
@@ -142,13 +142,13 @@ HTTP_RESPONSE * http_response_fromstr(const char * data) {
     sTmp = strtok(NULL, " ");
     response->status_code = atoi(sTmp);
     if(!response->status_code) {
-        http_response_destory(response);
+        http_response_destory(&response);
         free(line);
         return NULL;
     }
     sTmp = strtok(NULL, " ");
     if(sTmp == NULL) {
-        http_response_destory(response);
+        http_response_destory(&response);
         free(line);
         return NULL;
     }
@@ -157,7 +157,7 @@ HTTP_RESPONSE * http_response_fromstr(const char * data) {
     sTmp = strtok(sTmp, "/");
     sTmp = strtok(NULL, " ");
     if(sTmp == NULL) {
-        http_response_destory(response);
+        http_response_destory(&response);
         free(line);
         return NULL;
     }
@@ -167,7 +167,7 @@ HTTP_RESPONSE * http_response_fromstr(const char * data) {
     response->headers = dict_initialize();
     while(TRUE) {
         i = strcspn(tmp, HTTP_NEWLINE);
-        line = malloc(i + 1);
+        line = (char *)malloc(i + 1);
         strncpy(line, tmp, i);
         line[i] = '\0';
         tmp += i + strlen(HTTP_NEWLINE);
@@ -227,8 +227,8 @@ int http_connect(HTTP_CONNECTION **connection, const char *host, unsigned short 
             SSL_library_init();
             is_init_ssl = TRUE;
         }
-        conn->ssl = malloc(sizeof(HTTP_SSL));
-        conn->ssl->method = SSLv3_client_method();
+        conn->ssl = (HTTP_SSL *)malloc(sizeof(HTTP_SSL));
+        conn->ssl->method = (SSL_METHOD *)SSLv3_client_method();
         conn->ssl->context = SSL_CTX_new(conn->ssl->method);
         conn->ssl->ssl = SSL_new(conn->ssl->context);
     }
@@ -259,7 +259,7 @@ int http_connect(HTTP_CONNECTION **connection, const char *host, unsigned short 
         return HT_NETWORK_ERROR;
     }
     if(conn->ssl) {
-        SSL_set_fd(conn->ssl->ssl, conn->socketd);
+        SSL_set_fd(conn->ssl->ssl, (int)conn->socketd);
         SSL_connect(conn->ssl->ssl);
         //ignore certificate validate
         //conn->ssl->cert = SSL_get_peer_certificate(conn->ssl->ssl);
@@ -312,7 +312,7 @@ int http_request(HTTP_CONNECTION *connection, const HTTP_REQUEST *request, HTTP_
     dict_set_element(request->headers, L"Connection", tmp, strlen(tmp) + 1);
     tmp = http_request_tostr(request);
     size = strlen(tmp) + 1;
-    http_send(connection, tmp, size);
+    http_send(connection, tmp, (int)size);
     free(tmp);
     tmp = NULL;
     while(ret = http_recv(connection, buff, RECV_BUFFSIZE)) {
@@ -325,7 +325,7 @@ int http_request(HTTP_CONNECTION *connection, const HTTP_REQUEST *request, HTTP_
             tmp = _strdup(buff);
         } else {
             size = strlen(tmp) + strlen(buff) + 1;
-            nTmp = realloc(tmp, size);
+            nTmp = (char *)realloc(tmp, size);
             if(nTmp != tmp) {
                 tmp = nTmp;
                 nTmp = NULL;
