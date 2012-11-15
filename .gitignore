@@ -2,8 +2,10 @@
 !.gitignore
 !*.sln
 !/netdisk4tc/
+!/entries/
 !/netdisk4tc/lua/
 !/netdisk4tc/api/
+!*.lua
 !*.c
 !*.h
 !*.vcproj

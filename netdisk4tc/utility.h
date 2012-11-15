@@ -11,5 +11,6 @@ wchar_t* ctow(const char *);
 char* wtoc(const wchar_t *);
 char* trim(char *);
 wchar_t* wtrim(wchar_t *);
+int strtotime(wchar_t *, SYSTEMTIME *);
 extern wchar_t my_dir[MAX_PATH];
 #endif

@@ -1,5 +1,6 @@
 #include <string.h>
 #include <Windows.h>
+#include <tchar.h>
 #include "utility.h"
 
 wchar_t* wcslcpy(wchar_t *str1, const wchar_t *str2, int imaxlen) {
@@ -76,4 +77,24 @@ wchar_t* wtrim(wchar_t *wstr) {
     }
     *++wstr_last = '\0';
     return wstr;
+}
+
+int strtotime(wchar_t * str, SYSTEMTIME *time) {
+    int year = 0;
+    int month = 0;
+    int day = 0;
+    int hour = 0;
+    int second = 0;
+    int minute = 0;
+    if(!str) {
+        return FALSE;
+    }
+    _stscanf(str, L"%d-%d-%d %d:%d:%d", &year, &month, &day, &hour, &minute, &second);
+    time->wYear = year;
+    time->wMonth = month;
+    time->wDay = day;
+    time->wHour = hour;
+    time->wSecond = second;
+    time->wMinute = minute;
+    return TRUE;
 }

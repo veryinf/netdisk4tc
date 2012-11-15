@@ -4,7 +4,7 @@
 #include <Windows.h>
 #include <stdlib.h>
 
-#define PATH_MAX 1024
+#define PATH_MAX 260
 
 #define FS_EXEC_OK 0
 #define FS_EXEC_ERROR 1

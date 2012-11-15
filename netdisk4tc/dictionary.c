@@ -65,15 +65,11 @@ int dict_set_element(Dictionary *pdict, wchar_t *key, const void *value, size_t 
     return dict_set_element_s(pdict, key, value, size, NULL);
 }
 
-int dict_get_element_s(Dictionary *pdict, wchar_t *key, void **value, size_t size) {
+int dict_get_element_s(Dictionary *pdict, wchar_t *key, const void **value) {
     DictEntry *iter = pdict->first;
     while(iter != NULL) {
         if(wcscmp(key, iter->key) == 0) {
-            *value = malloc(size);
-            if (!*value) {
-                return DICT_FATAL;
-            }
-            memcpy(*value, iter->value, size);
+            *value = iter->value;
             return DICT_OK;
         }
         iter = iter->next;

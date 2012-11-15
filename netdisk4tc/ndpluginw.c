@@ -19,7 +19,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
     char *sTmp;
     HANDLE fHandle = NULL;
     lua_State *lua = NULL;
-    NDisk_Entry *pEntry = NULL;
+    NDiskEntry *pEntry = NULL;
 
     if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
         hInst = hModule;
@@ -68,16 +68,19 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
                     continue;
                 }
                 if(available_disk_entries == NULL) {
-                    available_disk_entries = malloc(sizeof(NDisk_Entry));
+                    available_disk_entries = malloc(sizeof(NDiskEntry));
                 } else {
-                    pEntry = realloc(available_disk_entries, (i + 1) * sizeof(NDisk_Entry));
+                    pEntry = realloc(available_disk_entries, (i + 1) * sizeof(NDiskEntry));
                     if(pEntry != available_disk_entries) {
                         available_disk_entries = pEntry;
                     }
                 }
-                available_disk_entries[i].type_id = i;
+                lua_register(lua, "http", NULL);
+                _wsplitpath_s(fData.cFileName, NULL, NULL, NULL, NULL, &tmp, PATH_MAX, NULL, NULL);
+                available_disk_entries[i].name = _wcsdup(tmp);
                 available_disk_entries[i].description = ctow(lua_tostring(lua, -1));
                 available_disk_entries[i].signin = ctow(lua_tostring(lua, -2));
+                lua_pop(lua, 2);
                 available_disk_entries[i].script = lua;
                 i++;
                 if(!FindNextFileW(fHandle, &fData)) {
@@ -87,11 +90,13 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
         }
         available_disk_entries_length = i;
         available_disks = dict_initialize();
+        ndisks_load();
     }
     if(ul_reason_for_call == DLL_PROCESS_DETACH) {
         // destory
         if(available_disk_entries != NULL) {
             for(i = 0; i < available_disk_entries_length; i++) {
+                free(available_disk_entries[i].name);
                 free(available_disk_entries[i].description);
                 free(available_disk_entries[i].signin);
                 lua_close(available_disk_entries[i].script);
@@ -118,36 +123,28 @@ int __stdcall FsInitW(int PluginNr, tProgressProcW pProgressProcW, tLogProcW pLo
 
 typedef struct {
     NDisk * disk;
-    wchar_t subPath[PATH_MAX];
+    NDiskEntry * entry;
+    wchar_t sPath[PATH_MAX];
     wchar_t path[PATH_MAX];
+    Dictionary * dict;
     DictEntry * findHandle;
     int isLast;
 } FindStruc;
 
 HANDLE __stdcall FsFindFirstW(WCHAR* Path, WIN32_FIND_DATAW *FindData) {
     FindStruc *pFind = NULL;
-    wchar_t * tmp = NULL, *sTmp = NULL, key[PATH_MAX];
     pFind = malloc(sizeof(FindStruc));
     memset(pFind, 0, sizeof(FindStruc));
     if(wcscmp(Path, L"\\") == 0) {
         pFind->findHandle = available_disks->first;
     } else {
-        tmp = Path + 1;
-        for(sTmp = tmp; *sTmp != '\0' && *sTmp != '\\'; ++sTmp){
-            //pass
-        }
-        memset(key, '\0', PATH_MAX);
-        wcslcpy(key, tmp, sTmp - tmp + 1);
-        memset(pFind->subPath, '\0', PATH_MAX);
-        wcslcpy(pFind->subPath, sTmp, PATH_MAX);
-        pFind->disk = dict_get_element(available_disks, key);
-        if(pFind->disk == NULL) {
+        if(ndisk_parse(Path, &pFind->entry, &pFind->disk, pFind->sPath) != NDISK_OK || pFind->disk == NULL) {
             free(pFind);
             return INVALID_HANDLE_VALUE;
         }
-        if(!pFind->disk->token) {
-            LogProcW(PluginNumber, MSGTYPE_DETAILS, key);
-        }
+        pFind->dict = dict_initialize();
+        ndisk_dir(pFind->dict, pFind->entry, pFind->disk, pFind->sPath);
+        pFind->findHandle = pFind->dict->first;
     }
     wcslcpy(pFind->path, Path, PATH_MAX);
     memset(FindData, 0, sizeof(WIN32_FIND_DATAW));
@@ -160,6 +157,7 @@ HANDLE __stdcall FsFindFirstW(WCHAR* Path, WIN32_FIND_DATAW *FindData) {
 
 BOOL __stdcall FsFindNextW(HANDLE Hdl,WIN32_FIND_DATAW *FindData) {
     FindStruc *pFind = (FindStruc *)Hdl;
+    WIN32_FIND_DATAW *fData = NULL;
     NDisk *disk = NULL;
     if(pFind == NULL || pFind->isLast) {
         return FALSE;
@@ -182,6 +180,19 @@ BOOL __stdcall FsFindNextW(HANDLE Hdl,WIN32_FIND_DATAW *FindData) {
             pFind->findHandle = pFind->findHandle->next;
             return pFind;
         }
+    } else {
+        if(pFind->findHandle != NULL) {
+            fData = (WIN32_FIND_DATAW *)pFind->findHandle->value;
+            FindData->dwFileAttributes = fData->dwFileAttributes;
+            FindData->nFileSizeHigh = fData->nFileSizeHigh;
+            FindData->nFileSizeLow = fData->nFileSizeLow;
+            FindData->ftCreationTime = fData->ftCreationTime;
+            FindData->ftLastWriteTime = fData->ftLastWriteTime;
+            FindData->ftLastAccessTime = fData->ftLastAccessTime;
+            wcslcpy(FindData->cFileName, fData->cFileName, _countof(FindData->cFileName) - 1);
+            pFind->findHandle = pFind->findHandle->next;
+            return pFind;
+        }
     }
     return FALSE;
 }
@@ -189,6 +200,9 @@ BOOL __stdcall FsFindNextW(HANDLE Hdl,WIN32_FIND_DATAW *FindData) {
 int __stdcall FsFindClose(HANDLE Hdl) {
     FindStruc *pFind = (FindStruc *)Hdl;
     if(pFind != NULL) {
+        if(pFind->dict != NULL) {
+            dict_destroy(&pFind->dict);
+        }
         free(pFind);
         pFind = NULL;
     }
@@ -201,7 +215,7 @@ int __stdcall FsGetFileW(WCHAR* RemoteName, WCHAR* LocalName, int CopyFlags, Rem
 
 int __stdcall FsExecuteFileW(HWND MainWin, WCHAR* RemoteName, WCHAR* Verb) {
     int dlgResult = 0;
-    if(wcscmp(RemoteName, L"\\[操作]新增网盘") == 0) {
+    if(wcscmp(Verb, L"open") == 0 && wcscmp(RemoteName, L"\\[操作]新增网盘") == 0) {
         dlgResult = DialogBoxW((HINSTANCE)hInst, MAKEINTRESOURCEW(IDD_NEW), GetActiveWindow(), NewDiskDlgProc);
         if(dlgResult == IDOK) {
             wcslcpy(RemoteName, L"\\", PATH_MAX);

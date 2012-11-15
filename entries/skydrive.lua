@@ -1,0 +1,9 @@
+signin = "https://signup.live.com/signup.aspx"
+description = "Microsoft SkyDrive"
+
+dir = function(params)
+    local files = {}
+    files[1] = {attribute = 'file', filename = 'a.txt', size = 1, create = '2012-12-30 15:03:54', access = '2012-12-31 15:03:54', write = '2012-12-31 10:03:54'}
+    files[2] = {attribute = 'directory', filename = params.username, create = '5122445'}
+    return files
+end

@@ -54,13 +54,13 @@ size_t dict_get_element_size(Dictionary *, wchar_t *);
 
 //************************************
 // Returns:   int 成功返回 DICT_OK，给定的键名未找到则返回 DICT_MISS，否则返回 DICT_FAILED
-// Description: 按照键名返回指定字典的特定条目
+// Description: 按照键名返回指定字典的特定条目(直接引用)
 //************************************
-int dict_get_element_s(Dictionary *, wchar_t *, void **, size_t);
+int dict_get_element_s(Dictionary *, wchar_t *, const void **);
 
 //************************************
 // Returns:   void * 数据使用完毕应释放
-// Description: 按照键名返回指定字典的特定条目，使用后应释放内存。如果不存在，返回 NULL
+// Description: 按照键名返回指定字典的特定条目的副本，使用后应释放内存。如果不存在，返回 NULL
 //************************************
 void * dict_get_element(Dictionary *, wchar_t *);
 

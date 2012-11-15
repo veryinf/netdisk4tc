@@ -261,9 +261,10 @@ int http_connect(HTTP_CONNECTION **connection, const char *host, unsigned short 
     if(conn->ssl) {
         SSL_set_fd(conn->ssl->ssl, conn->socketd);
         SSL_connect(conn->ssl->ssl);
-        conn->ssl->cert = SSL_get_peer_certificate(conn->ssl->ssl);
-        X509_free(conn->ssl->cert);
-        conn->ssl->cert = NULL;
+        //ignore certificate validate
+        //conn->ssl->cert = SSL_get_peer_certificate(conn->ssl->ssl);
+        //X509_free(conn->ssl->cert);
+        //conn->ssl->cert = NULL;
     }
     conn->status = HT_OK;
     *connection = conn;
@@ -312,10 +313,8 @@ int http_request(HTTP_CONNECTION *connection, const HTTP_REQUEST *request, HTTP_
     tmp = http_request_tostr(request);
     size = strlen(tmp) + 1;
     http_send(connection, tmp, size);
-    //write(connection->socketd, tmp, size);
     free(tmp);
     tmp = NULL;
-    //while(ret = recv(connection->socketd, buff, RECV_BUFFSIZE, 0)) {
     while(ret = http_recv(connection, buff, RECV_BUFFSIZE)) {
         if(ret < RECV_BUFFSIZE) {
             buff[ret] = '\0';
