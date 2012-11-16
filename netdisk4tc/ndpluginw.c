@@ -6,6 +6,7 @@
 #include "disk.h"
 #include "lua/lauxlib.h"
 #include "lua/lualib.h"
+#include "wrapper.h"
 
 HANDLE hInst;
 int PluginNumber;
@@ -36,21 +37,30 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
         fHandle = FindFirstFileW(tmp, &fData);
         i = 0;
         if(fHandle != INVALID_HANDLE_VALUE) {
-            while(TRUE) {
+            do {
                 lua = NULL;
                 lua = luaL_newstate();
                 luaL_openlibs(lua);
+                wcslcpy(tmp, my_dir, PATH_MAX);
+                wcscat_s(tmp, PATH_MAX, L"?.lua");
+                sTmp = wtoc(tmp);
+                lua_getglobal(lua, "package");
+                lua_pushstring(lua, sTmp);
+                lua_setfield(lua, -2, "path");
+                lua_pop(lua, 1);
+                free(sTmp);
+                sTmp = NULL;
+
                 wcslcpy(tmp, my_dir, PATH_MAX);
                 wcscat_s(tmp, PATH_MAX, L"entries\\");
                 wcscat_s(tmp, PATH_MAX, fData.cFileName);
                 sTmp = wtoc(tmp);
                 if(luaL_loadfile(lua, sTmp) || lua_pcall(lua, 0, 0, 0)) {
+                    free(sTmp);
+                    sTmp = NULL;
                     OutputDebugStringA("Error Msg is: ");
                     OutputDebugStringA(lua_tostring(lua,-1));
                     lua_close(lua);
-                    if(!FindNextFileW(fHandle, &fData)) {
-                        break;
-                    }
                     continue;
                 }
                 free(sTmp);
@@ -59,16 +69,10 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
                 lua_getglobal(lua, "description");
                 if(!lua_isstring(lua, -2)) {
                     lua_close(lua);
-                    if(!FindNextFileW(fHandle, &fData)) {
-                        break;
-                    }
                     continue;
                 }
                 if(!lua_isstring(lua, -1)) {
                     lua_close(lua);
-                    if(!FindNextFileW(fHandle, &fData)) {
-                        break;
-                    }
                     continue;
                 }
                 if(available_disk_entries == NULL) {
@@ -79,18 +83,15 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
                         available_disk_entries = pEntry;
                     }
                 }
-                lua_register(lua, "http", NULL);
                 _wsplitpath_s(fData.cFileName, NULL, 0, NULL, 0, (wchar_t *)&tmp, PATH_MAX, NULL, 0);
                 available_disk_entries[i].name = _wcsdup(tmp);
                 available_disk_entries[i].description = ctow(lua_tostring(lua, -1));
                 available_disk_entries[i].signin = ctow(lua_tostring(lua, -2));
                 lua_pop(lua, 2);
+                lua_register(lua, "http", wp_http);
                 available_disk_entries[i].script = lua;
                 i++;
-                if(!FindNextFileW(fHandle, &fData)) {
-                    break;
-                }
-            }
+            } while (FindNextFileW(fHandle, &fData));
         }
         available_disk_entries_length = i;
         available_disks = dict_initialize();
@@ -147,7 +148,10 @@ HANDLE __stdcall FsFindFirstW(WCHAR* Path, WIN32_FIND_DATAW *FindData) {
             return INVALID_HANDLE_VALUE;
         }
         pFind->dict = dict_initialize();
-        ndisk_dir(pFind->dict, pFind->entry, pFind->disk, pFind->sPath);
+        if(ndisk_dir(pFind->dict, pFind->entry, pFind->disk, pFind->sPath) == NDISK_FATAL) {
+            free(pFind);
+            return INVALID_HANDLE_VALUE;
+        }
         pFind->findHandle = pFind->dict->first;
     }
     wcslcpy(pFind->path, Path, PATH_MAX);

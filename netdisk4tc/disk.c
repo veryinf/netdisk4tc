@@ -105,21 +105,27 @@ int ndisk_parse(const wchar_t *path, NDiskEntry **entry, NDisk **disk, wchar_t *
     return r;
 }
 
-static void ndisk_lua_push(lua_State *l, const NDisk *disk) {
-    char *tmp;
+static int ndisk_lua_push(lua_State *l, NDisk *disk) {
+    char *tmp = NULL;
+    wchar_t sTmp[40];
     lua_newtable(l);
     tmp = wtoc(disk->username);
     lua_pushstring(l, tmp);
     free(tmp);
     tmp = NULL;
     lua_setfield(l, -2, "username");
-    if(disk->password) {
-        tmp = wtoc(disk->password);
-        lua_pushstring(l, tmp);
-        free(tmp);
-        tmp = NULL;
-        lua_setfield(l, -2, "password");
+    if(disk->password == NULL || wcscmp(disk->password, L"") == 0) {
+        memset(sTmp, 0, 40);
+        if(RequestProcW(PluginNumber, RT_Password, L"请求密码", L"未保存密码, 或密码已失效, 请重新提供密码 . ", sTmp, 40) == FALSE) {
+            return NDISK_FATAL;
+        }
+        disk->password = _wcsdup(sTmp);
     }
+    tmp = wtoc(disk->password);
+    lua_pushstring(l, tmp);
+    free(tmp);
+    tmp = NULL;
+    lua_setfield(l, -2, "password");
     if(disk->token) {
         tmp = wtoc(disk->token);
         lua_pushstring(l, tmp);
@@ -134,6 +140,7 @@ static void ndisk_lua_push(lua_State *l, const NDisk *disk) {
         tmp = NULL;
         lua_setfield(l, -2, "secret");
     }
+    return NDISK_OK;
 }
 
 int ndisk_dir(Dictionary *dict, const NDiskEntry *entry, NDisk *disk, const wchar_t *path) {
@@ -148,17 +155,15 @@ int ndisk_dir(Dictionary *dict, const NDiskEntry *entry, NDisk *disk, const wcha
         RequestProcW(PluginNumber, RT_MsgOK, L"配置错误", L"网盘脚本错误, 不能读取当前目录的内容. ", NULL, 0);
         return NDISK_FATAL;
     }
-    ndisk_lua_push(entry->script, disk);
-    //lua_newtable(entry->script);
+    if(ndisk_lua_push(entry->script, disk) == NDISK_FATAL) {
+        lua_settop(entry->script, 0);
+        return NDISK_FATAL;
+    }
     tmp = wtoc(path);
     lua_pushstring(entry->script, tmp);
     free(tmp);
     tmp = NULL;
-    //i = lua_gettop(entry->script);
     lua_setfield(entry->script, -2, "path");
-    //i = lua_gettop(entry->script);
-    //OutputDebugStringA(lua_typename(entry->script, -1));
-    //OutputDebugStringA(lua_typename(entry->script, -2));
     if(lua_pcall(entry->script, 1, 1, 0)) {
         OutputDebugStringA("Error Msg is: ");
         OutputDebugStringA(lua_tostring(entry->script, -1));
