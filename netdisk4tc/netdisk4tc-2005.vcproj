@@ -23,6 +23,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			UseOfATL="0"
 			CharacterSet="1"
 			>
 			<Tool
@@ -345,6 +346,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\webbrowser\cwebpage.c"
+				>
+			</File>
+			<File
 				RelativePath=".\dictionary.c"
 				>
 			</File>
@@ -369,19 +374,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\lua\lbitlib.c"
-				>
-			</File>
-			<File
 				RelativePath=".\lua\lcode.c"
-				>
-			</File>
-			<File
-				RelativePath=".\lua\lcorolib.c"
-				>
-			</File>
-			<File
-				RelativePath=".\lua\lctype.c"
 				>
 			</File>
 			<File
@@ -477,10 +470,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\lua\LuaJSON_lib.c"
-				>
-			</File>
-			<File
 				RelativePath=".\lua\lundump.c"
 				>
 			</File>
@@ -505,7 +494,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\api\skydrive.c"
+				RelativePath=".\lua\print.c"
 				>
 			</File>
 			<File
@@ -526,6 +515,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\webbrowser\cwebpage.h"
+				>
+			</File>
 			<File
 				RelativePath=".\dictionary.h"
 				>
@@ -548,10 +541,6 @@
 			</File>
 			<File
 				RelativePath=".\lua\lcode.h"
-				>
-			</File>
-			<File
-				RelativePath=".\lua\lctype.h"
 				>
 			</File>
 			<File
@@ -612,10 +601,6 @@
 			</File>
 			<File
 				RelativePath=".\lua\lua.h"
-				>
-			</File>
-			<File
-				RelativePath=".\lua\lua.hpp"
 				>
 			</File>
 			<File

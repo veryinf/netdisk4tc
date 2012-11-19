@@ -2,10 +2,11 @@
 #include "resource.h"
 #include "disk.h"
 #include "ndplugin.h"
+#include "webbrowser\cwebpage.h"
 
 #define INPUT_MAX 1024
 
-INT_PTR CALLBACK NewDiskDlgProc(HWND hWnd, unsigned int Message, WPARAM wParam, LPARAM lParam) {
+INT_PTR CALLBACK NewdiskProc(HWND hWnd, unsigned int Message, WPARAM wParam, LPARAM lParam) {
     WCHAR buff[INPUT_MAX];
     WCHAR *tmp;
     NDisk *disk = NULL;
@@ -78,4 +79,22 @@ INT_PTR CALLBACK NewDiskDlgProc(HWND hWnd, unsigned int Message, WPARAM wParam, 
             break;
     }
     return 0;
+}
+
+INT_PTR CALLBACK AuthProc(HWND hWnd, unsigned int Message, WPARAM wParam, LPARAM lParam) {
+    switch(Message) {
+        case WM_SIZE:
+            ResizeBrowser(hWnd, LOWORD(lParam), HIWORD(lParam));
+            return(0);
+        case WM_CREATE:
+            if (EmbedBrowserObject(hWnd)){ 
+                return(-1);
+            }
+            return(0);
+        case WM_DESTROY:
+            UnEmbedBrowserObject(hWnd);
+            PostQuitMessage(0);
+            return(TRUE);
+    }
+    return(DefWindowProc(hWnd, Message, wParam, lParam));
 }

@@ -150,35 +150,47 @@ int ndisk_dir(Dictionary *dict, const NDiskEntry *entry, NDisk *disk, const wcha
     unsigned long size = 0;
     int i = 0;
     SYSTEMTIME time;
-    lua_getglobal(entry->script, "dir");
-    if(!lua_isfunction(entry->script, -1)) {
+    lua_reset();
+    lua_getglobal(script, "entries");
+    tmp = wtoc(entry->name);
+    lua_getfield(script, -1, tmp);
+    free(tmp);
+    tmp = NULL;
+    i = lua_gettop(script);
+    if(lua_pcall(script, 0, 0, 0)) {
+        OutputDebugStringA("Error Msg is: ");
+        OutputDebugStringA(lua_tostring(script, -1));
+    }
+    lua_pop(script, 1);
+    lua_getglobal(script, "dir");
+    if(!lua_isfunction(script, -1)) {
         RequestProcW(PluginNumber, RT_MsgOK, L"配置错误", L"网盘脚本错误, 不能读取当前目录的内容. ", NULL, 0);
         return NDISK_FATAL;
     }
-    if(ndisk_lua_push(entry->script, disk) == NDISK_FATAL) {
-        lua_settop(entry->script, 0);
+    if(ndisk_lua_push(script, disk) == NDISK_FATAL) {
+        lua_settop(script, 0);
         return NDISK_FATAL;
     }
     tmp = wtoc(path);
-    lua_pushstring(entry->script, tmp);
+    lua_pushstring(script, tmp);
     free(tmp);
     tmp = NULL;
-    lua_setfield(entry->script, -2, "path");
-    if(lua_pcall(entry->script, 1, 1, 0)) {
+    lua_setfield(script, -2, "path");
+    if(lua_pcall(script, 1, 1, 0)) {
         OutputDebugStringA("Error Msg is: ");
-        OutputDebugStringA(lua_tostring(entry->script, -1));
+        OutputDebugStringA(lua_tostring(script, -1));
     }
 
-    if(lua_istable(entry->script, -1)) {
-        lua_pushnil(entry->script);
-        while (lua_next(entry->script, -2)) {
-            if(lua_istable(entry->script, -1)) {
+    if(lua_istable(script, -1)) {
+        lua_pushnil(script);
+        while (lua_next(script, -2)) {
+            if(lua_istable(script, -1)) {
                 memset(&fData, 0, sizeof(WIN32_FIND_DATAW));
-                lua_pushnil(entry->script);
-                while(lua_next(entry->script, -2)) {
-                    tmp = (char *)lua_tostring(entry->script, -2);
+                lua_pushnil(script);
+                while(lua_next(script, -2)) {
+                    tmp = (char *)lua_tostring(script, -2);
                     if(strcmp(tmp, "attribute") == 0) {
-                        sTmp = (char *)lua_tostring(entry->script, -1);
+                        sTmp = (char *)lua_tostring(script, -1);
                         if(strcmp(sTmp, "file") == 0) {
                             fData.dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
                         }
@@ -187,19 +199,19 @@ int ndisk_dir(Dictionary *dict, const NDiskEntry *entry, NDisk *disk, const wcha
                         }
                     }
                     if(strcmp(tmp, "filename") == 0) {
-                        sTmp = (char *)lua_tostring(entry->script, -1);
+                        sTmp = (char *)lua_tostring(script, -1);
                         pTmp = ctow(sTmp);
                         wcslcpy(fData.cFileName, pTmp, PATH_MAX);
                         free(pTmp);
                         pTmp = NULL;
                     }
                     if(strcmp(tmp, "size") == 0) {
-                        size = (unsigned long)lua_tonumber(entry->script, -1);
+                        size = (unsigned long)lua_tonumber(script, -1);
                         fData.nFileSizeHigh = HIWORD(size);
                         fData.nFileSizeLow = LOWORD(size);
                     }
                     if(strcmp(tmp, "create") == 0) {
-                        sTmp = (char *)lua_tostring(entry->script, -1);
+                        sTmp = (char *)lua_tostring(script, -1);
                         pTmp = ctow(sTmp);
                         memset(&time, 0, sizeof(SYSTEMTIME));
                         if(strtotime(pTmp, &time)) {
@@ -209,7 +221,7 @@ int ndisk_dir(Dictionary *dict, const NDiskEntry *entry, NDisk *disk, const wcha
                         pTmp = NULL;
                     }
                     if(strcmp(tmp, "access") == 0) {
-                        sTmp = (char *)lua_tostring(entry->script, -1);
+                        sTmp = (char *)lua_tostring(script, -1);
                         pTmp = ctow(sTmp);
                         memset(&time, 0, sizeof(SYSTEMTIME));
                         if(strtotime(pTmp, &time)) {
@@ -219,7 +231,7 @@ int ndisk_dir(Dictionary *dict, const NDiskEntry *entry, NDisk *disk, const wcha
                         pTmp = NULL;
                     }
                     if(strcmp(tmp, "write") == 0) {
-                        sTmp = (char *)lua_tostring(entry->script, -1);
+                        sTmp = (char *)lua_tostring(script, -1);
                         pTmp = ctow(sTmp);
                         memset(&time, 0, sizeof(SYSTEMTIME));
                         if(strtotime(pTmp, &time)) {
@@ -228,16 +240,16 @@ int ndisk_dir(Dictionary *dict, const NDiskEntry *entry, NDisk *disk, const wcha
                         free(pTmp);
                         pTmp = NULL;
                     }
-                    lua_pop(entry->script, 1);
+                    lua_pop(script, 1);
                 }
                 if(fData.cFileName) {
                     dict_set_element(dict, fData.cFileName, &fData, sizeof(WIN32_FIND_DATAW));
                 }
             }
-            lua_pop(entry->script, 1);
+            lua_pop(script, 1);
         }
     }
-    lua_pop(entry->script, 1);
+    lua_pop(script, 1);
     return NDISK_OK;
 }
 

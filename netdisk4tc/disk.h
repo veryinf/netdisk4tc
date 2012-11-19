@@ -11,7 +11,6 @@ typedef struct _ndisk_entry {
     wchar_t * name;
     wchar_t * description;
     wchar_t * signin;
-    lua_State *script;
 } NDiskEntry;
 
 extern NDiskEntry *available_disk_entries;

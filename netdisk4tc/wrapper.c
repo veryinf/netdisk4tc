@@ -1,7 +1,68 @@
+#include "utility.h"
 #include "wrapper.h"
 #include "http.h"
+#include "resource.h"
+#include "ndplugin.h"
+#include "ui.h"
+#include "webbrowser/cwebpage.h"
 
-int wp_http(lua_State * l) {
+int wp_utoc(lua_State *l) {
+    char *tmp = NULL;
+    if(lua_gettop(l) != 1 || !lua_isstring(l, -1)) {
+        lua_pushnil(l);
+        OutputDebugString("arguments error");
+        return 1;
+    }
+    tmp = lua_tostring(l, -1);
+    lua_pop(l, 1);
+    tmp = convert(tmp, CP_UTF8, 936);
+    lua_pushstring(l, tmp);
+    free(tmp);
+    tmp = NULL;
+    return 1;
+}
+
+int wp_explorer(lua_State *l) {
+    char *tmp = NULL;
+    wchar_t *sTmp = NULL;
+    MSG	msg;
+    WNDCLASSEX wc;
+    RECT rect;
+    int width = 500, height = 600;
+    HWND hParent = GetActiveWindow();
+    if(lua_gettop(l) != 1 || !lua_isstring(l, -1)) {
+        lua_pushnil(l);
+        OutputDebugString("arguments error");
+        return 1;
+    }
+    ZeroMemory(&wc, sizeof(WNDCLASSEX));
+    wc.cbSize = sizeof(WNDCLASSEX);
+    wc.hInstance = hInst;
+    wc.lpfnWndProc = AuthProc;
+    wc.lpszClassName = L"WebBrowser";
+    RegisterClassEx(&wc);
+    ZeroMemory(&msg, sizeof(MSG));
+    EnableWindow(hParent, FALSE);
+    GetWindowRect(hParent, &rect);
+    msg.hwnd = CreateWindowEx(0, L"WebBrowser", L"—È÷§", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, (rect.right - rect.left - width) / 2, (rect.bottom - rect.top - height) / 2, width, height, hParent, NULL, hInst, 0);
+    tmp = lua_tostring(l, -1);
+    sTmp = ctow(tmp);
+    DisplayHTMLPage(msg.hwnd, sTmp);
+    free(sTmp);
+    sTmp = NULL;
+    ShowWindow(msg.hwnd, SW_SHOWNORMAL);
+    UpdateWindow(msg.hwnd);
+
+    while (GetMessage(&msg, 0, 0, 0) == 1) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+    EnableWindow(hParent, TRUE);
+    SetForegroundWindow(hParent);
+    return 0;
+}
+
+int wp_http(lua_State *l) {
     char *tmp = NULL, *sTmp = NULL, *pTmp = NULL;
     char *host = NULL, *path = NULL, *body = NULL;
     HTTP_CONNECTION *conn;

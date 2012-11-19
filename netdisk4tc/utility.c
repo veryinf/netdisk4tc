@@ -3,7 +3,7 @@
 #include <tchar.h>
 #include "utility.h"
 
-wchar_t* wcslcpy(wchar_t *str1, const wchar_t *str2, int imaxlen) {
+wchar_t * wcslcpy(wchar_t *str1, const wchar_t *str2, int imaxlen) {
     if ((int)wcslen(str2) >= imaxlen - 1) {
         wcsncpy_s(str1, imaxlen, str2, imaxlen - 1);
         str1[imaxlen - 1] = 0;
@@ -13,7 +13,7 @@ wchar_t* wcslcpy(wchar_t *str1, const wchar_t *str2, int imaxlen) {
     return str1;
 }
 
-char* strlcpy(char *str1, const char *str2, int imaxlen) {
+char * strlcpy(char *str1, const char *str2, int imaxlen) {
     if ((int)strlen(str2) >= imaxlen - 1) {
         strncpy_s(str1, imaxlen, str2, imaxlen - 1);
         str1[imaxlen - 1] = 0;
@@ -23,8 +23,8 @@ char* strlcpy(char *str1, const char *str2, int imaxlen) {
     return str1;
 }
 
-wchar_t* ctow(const char *str) {
-    wchar_t* buffer = NULL;
+wchar_t * ctow(const char *str) {
+    wchar_t *buffer = NULL;
     size_t size = 0;
     if(str) {
         size =(size_t) MultiByteToWideChar(CP_ACP, 0, str, -1, NULL, 0);
@@ -34,8 +34,8 @@ wchar_t* ctow(const char *str) {
     return buffer;
 }
 
-char* wtoc(const wchar_t *str) {
-    char* buffer = NULL;
+char * wtoc(const wchar_t *str) {
+    char *buffer = NULL;
     size_t size = 0;
     if(str) {
         size =(size_t) WideCharToMultiByte(CP_OEMCP, 0, str, -1, NULL, 0, NULL, FALSE);
@@ -43,6 +43,28 @@ char* wtoc(const wchar_t *str) {
         WideCharToMultiByte(CP_OEMCP, 0, str, -1, buffer, (int)size, NULL, FALSE);
     }
     return buffer;
+}
+
+char *convert(char *str, int src, int des) {
+    wchar_t *wBuff = NULL;
+    char *cBuff = NULL, *ret = NULL;
+    size_t size = 0;
+    if(!str) {
+        return NULL;
+    }
+    size =(size_t) MultiByteToWideChar(src, 0, str, -1, NULL, 0);
+    wBuff = (wchar_t *)calloc(size, sizeof(wchar_t));
+    MultiByteToWideChar(src, 0, str, -1, wBuff, (int)size); 
+
+    size =(size_t) WideCharToMultiByte(des, 0, wBuff, -1, NULL, 0, NULL, FALSE);
+    cBuff = (char *)calloc(size, sizeof(char));
+    WideCharToMultiByte(des, 0, wBuff, -1, cBuff, (int)size, NULL, FALSE);
+
+    ret = (char *)calloc(size, sizeof(char));
+    wsprintf(ret, "%s", wBuff);
+    free(wBuff);
+    free(cBuff);
+    return ret;
 }
 
 char* trim(char *str) {
@@ -97,4 +119,24 @@ int strtotime(wchar_t * str, SYSTEMTIME *time) {
     time->wSecond = second;
     time->wMinute = minute;
     return TRUE;
+}
+
+void lua_reset(void) {
+    if(script == NULL) {
+        return;
+    }
+    lua_pushnil(script);
+    lua_setglobal(script, "signin");
+    lua_pushnil(script);
+    lua_setglobal(script, "description");
+    lua_pushnil(script);
+    lua_setglobal(script, "dir");
+    //lua_pushnil(script);
+    //lua_setglobal(script, "sigin");
+    //lua_pushnil(script);
+    //lua_setglobal(script, "sigin");
+    //lua_pushnil(script);
+    //lua_setglobal(script, "sigin");
+    //lua_pushnil(script);
+    //lua_setglobal(script, "sigin");
 }

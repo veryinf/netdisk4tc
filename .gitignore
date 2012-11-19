@@ -3,6 +3,7 @@
 !*.sln
 !/netdisk4tc/
 !/entries/
+!/netdisk4tc/webbrowser/
 !/netdisk4tc/lua/
 !/netdisk4tc/api/
 !*.lua
