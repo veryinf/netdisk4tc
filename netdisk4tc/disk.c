@@ -14,7 +14,6 @@ static int ndisk_save_enumerator(const wchar_t *key, const void *value, size_t s
     disk = (NDisk *)value;
     WritePrivateProfileStringW(key, L"type", disk->type, (wchar_t*)data);
     WritePrivateProfileStringW(key, L"username", disk->username, (wchar_t*)data);
-    WritePrivateProfileStringW(key, L"password", disk->password, (wchar_t*)data);
     WritePrivateProfileStringW(key, L"nickname", disk->nickname, (wchar_t*)data);
     WritePrivateProfileStringW(key, L"token", disk->token, (wchar_t*)data);
     WritePrivateProfileStringW(key, L"secret", disk->secret, (wchar_t*)data);
@@ -34,14 +33,14 @@ void ndisks_save() {
 
 #define SECTIONS_BUFFER_SIZE 4096
 void ndisks_load() {
-    wchar_t tmp[PATH_MAX], sTmp[SECTIONS_BUFFER_SIZE], *pTmp, rTmp[PATH_MAX];
+    wchar_t tmp[SECTIONS_BUFFER_SIZE], sTmp[SECTIONS_BUFFER_SIZE], *pTmp, rTmp[SECTIONS_BUFFER_SIZE];
     size_t i = 0, j = 0;
     NDisk disk;
     if(available_disks == NULL) {
         return;
     }
-    wcslcpy(tmp, my_dir, PATH_MAX);
-    wcscat_s(tmp, PATH_MAX, _config_file);
+    wcslcpy(tmp, my_dir, SECTIONS_BUFFER_SIZE);
+    wcscat_s(tmp, SECTIONS_BUFFER_SIZE, _config_file);
     GetPrivateProfileSectionNamesW(sTmp, SECTIONS_BUFFER_SIZE, tmp);
     for(i = 0; i < SECTIONS_BUFFER_SIZE; i++) {
         if(sTmp[0] == '\0') {
@@ -54,23 +53,21 @@ void ndisks_load() {
             }
             j = i + 1;
             memset(&disk, 0, sizeof(NDisk));
-            GetPrivateProfileStringW(pTmp, L"type", NULL, rTmp, PATH_MAX, tmp);
+            GetPrivateProfileStringW(pTmp, L"type", NULL, rTmp, SECTIONS_BUFFER_SIZE, tmp);
             if(!rTmp || wcscmp(rTmp, L"") == 0) {
                 continue;
             }
             disk.type = _wcsdup(rTmp);
-            GetPrivateProfileStringW(pTmp, L"username", NULL, rTmp, PATH_MAX, tmp);
+            GetPrivateProfileStringW(pTmp, L"username", NULL, rTmp, SECTIONS_BUFFER_SIZE, tmp);
             if(!rTmp || wcscmp(rTmp, L"") == 0) {
                 free(disk.type);
                 continue;
             }
             disk.username = _wcsdup(rTmp);
             disk.nickname = _wcsdup(pTmp);
-            GetPrivateProfileStringW(pTmp, L"password", NULL, rTmp, PATH_MAX, tmp);
-            disk.password = _wcsdup(rTmp);
-            GetPrivateProfileStringW(pTmp, L"token", NULL, rTmp, PATH_MAX, tmp);
+            GetPrivateProfileStringW(pTmp, L"token", NULL, rTmp, SECTIONS_BUFFER_SIZE, tmp);
             disk.token = _wcsdup(rTmp);
-            GetPrivateProfileStringW(pTmp, L"secret", NULL, rTmp, PATH_MAX, tmp);
+            GetPrivateProfileStringW(pTmp, L"secret", NULL, rTmp, SECTIONS_BUFFER_SIZE, tmp);
             disk.secret = _wcsdup(rTmp);
             dict_set_element_s(available_disks, pTmp, &disk, sizeof(NDisk), ndisk_destroy_s);
         }
@@ -109,23 +106,16 @@ static int ndisk_lua_push(lua_State *l, NDisk *disk) {
     char *tmp = NULL;
     wchar_t sTmp[40];
     lua_newtable(l);
+    tmp = wtoc(disk->nickname);
+    lua_pushstring(l, tmp);
+    free(tmp);
+    tmp = NULL;
+    lua_setfield(l, -2, "nickname");
     tmp = wtoc(disk->username);
     lua_pushstring(l, tmp);
     free(tmp);
     tmp = NULL;
     lua_setfield(l, -2, "username");
-    if(disk->password == NULL || wcscmp(disk->password, L"") == 0) {
-        memset(sTmp, 0, 40);
-        if(RequestProcW(PluginNumber, RT_Password, L"请求密码", L"未保存密码, 或密码已失效, 请重新提供密码 . ", sTmp, 40) == FALSE) {
-            return NDISK_FATAL;
-        }
-        disk->password = _wcsdup(sTmp);
-    }
-    tmp = wtoc(disk->password);
-    lua_pushstring(l, tmp);
-    free(tmp);
-    tmp = NULL;
-    lua_setfield(l, -2, "password");
     if(disk->token) {
         tmp = wtoc(disk->token);
         lua_pushstring(l, tmp);
@@ -299,10 +289,6 @@ void ndisk_destroy(NDisk **disk) {
     if((*disk)->nickname != NULL) {
         free((*disk)->nickname);
         (*disk)->nickname = NULL;
-    }
-    if((*disk)->password != NULL) {
-        free((*disk)->password);
-        (*disk)->password = NULL;
     }
     if((*disk)->secret != NULL) {
         free((*disk)->secret);

@@ -20,7 +20,6 @@ extern Dictionary *available_disks;
 typedef struct _disk{
     wchar_t * type;
     wchar_t * username;
-    wchar_t * password;
     wchar_t * nickname;
     wchar_t * token;
     wchar_t * secret;

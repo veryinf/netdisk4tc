@@ -46,9 +46,6 @@ INT_PTR CALLBACK NewdiskProc(HWND hWnd, unsigned int Message, WPARAM wParam, LPA
                         break;
                     }
                     disk->username = _wcsdup(tmp);
-                    GetDlgItemTextW(hWnd, IDC_EDIT_PASSWORD, (LPWSTR)&buff, INPUT_MAX);
-                    tmp = wtrim(buff);
-                    disk->password = _wcsdup(tmp);
                     GetDlgItemTextW(hWnd, IDC_EDIT_TITLE, (LPWSTR)&buff, INPUT_MAX);
                     tmp = wtrim(buff);
                     if(wcscmp(tmp, L"") == 0) {
@@ -82,6 +79,7 @@ INT_PTR CALLBACK NewdiskProc(HWND hWnd, unsigned int Message, WPARAM wParam, LPA
 }
 
 INT_PTR CALLBACK AuthProc(HWND hWnd, unsigned int Message, WPARAM wParam, LPARAM lParam) {
+    wchar_t *data = NULL;
     switch(Message) {
         case WM_SIZE:
             ResizeBrowser(hWnd, LOWORD(lParam), HIWORD(lParam));
@@ -91,6 +89,10 @@ INT_PTR CALLBACK AuthProc(HWND hWnd, unsigned int Message, WPARAM wParam, LPARAM
                 return(-1);
             }
             return(0);
+        case WM_APP:
+            PostMessage(hWnd, WM_USER_AUTHTOKENDATA, wParam, 0);
+            PostMessage(hWnd, WM_CLOSE, 0, 0);
+            break;
         case WM_DESTROY:
             UnEmbedBrowserObject(hWnd);
             PostQuitMessage(0);

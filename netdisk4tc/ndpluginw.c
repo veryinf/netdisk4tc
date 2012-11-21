@@ -55,6 +55,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
         lua_setglobal(script, "json");
         lua_register(script, "http", wp_http);
         lua_register(script, "expl", wp_explorer);
+        lua_register(script, "savt", wp_savt);
         //lua_register(script, "utoc", wp_utoc);
         lua_newtable(script);
 

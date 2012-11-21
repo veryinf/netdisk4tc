@@ -670,7 +670,7 @@ HRESULT STDMETHODCALLTYPE UI_TranslateUrl(IDocHostUIHandler *This, DWORD dwTrans
 			CopyMemory(dest, &Blank[0], 12<<1);
 
 			// Convert the number after the "app:"
-			len = asciiToNumW(pchURLIn + 4);
+			//len = asciiToNumW(pchURLIn + 4);
 
 			// Get our host window. That was stored in our _IOleInPlaceFrameEx
 			hwnd = ((_IOleInPlaceSiteEx *)((char *)This - sizeof(_IOleInPlaceSiteEx)))->frame.window;
@@ -678,7 +678,10 @@ HRESULT STDMETHODCALLTYPE UI_TranslateUrl(IDocHostUIHandler *This, DWORD dwTrans
 			// Post a message to this window using WM_APP, and pass the number converted above.
 			// Do not SendMessage()!. Post instead, since the browser does not like us changing
 			// the URL within this here callback.
-			PostMessage(hwnd, WM_APP, (WPARAM)len, 0);
+			// PostMessage(hwnd, WM_APP, (WPARAM)len, 0);
+            // modify to pass the url data
+            PostMessage(hwnd, WM_APP, (WPARAM)(pchURLIn + 4), 0);
+
 
 			// Tell browser that we returned a URL
 			return(S_OK);

@@ -31,6 +31,8 @@
 #define MSGTYPE_IMPORTANTERROR 6
 #define MSGTYPE_OPERATIONCOMPLETE 7
 
+#define WM_USER_AUTHTOKENDATA (WM_USER + 100)
+
 typedef int (__stdcall *tProgressProc)(int, char*, char*,int);
 typedef void (__stdcall *tLogProc)(int, int, char*);
 typedef BOOL (__stdcall *tRequestProc)(int, int, char*, char*, char*, int);
